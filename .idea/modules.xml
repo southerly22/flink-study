@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/flink-java/flink-java.iml" filepath="$PROJECT_DIR$/flink-java/flink-java.iml" />
+      <module fileurl="file://$PROJECT_DIR$/flink-scala/flink-scala.iml" filepath="$PROJECT_DIR$/flink-scala/flink-scala.iml" />
+      <module fileurl="file://$PROJECT_DIR$/flink-study.iml" filepath="$PROJECT_DIR$/flink-study.iml" />
+    </modules>
+  </component>
+</project>
