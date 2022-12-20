@@ -1,4 +1,4 @@
-package day01;
+package source;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
