@@ -12,6 +12,7 @@
         <module>flink-scala</module>
         <module>flink-java</module>
         <module>study-java</module>
+        <module>flink-cdc</module>
     </modules>
 
     <properties>
