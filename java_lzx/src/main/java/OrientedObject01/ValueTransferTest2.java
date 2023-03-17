@@ -10,11 +10,11 @@ public class ValueTransferTest2 {
         Data d1 = new Data();
         d1.m = 10;
         d1.n = 20;
-        System.out.println("m = " + d1.m + ",n = "+ d1.n);
+        System.out.println("m = " + d1.m + ",n = "+ d1.n); //m = 10,n = 20
 
         ValueTransferTest2 test2 = new ValueTransferTest2();
         test2.swap(d1); //换序 传入的是地址,交换地址 值会变
-        System.out.println("m = " + d1.m + ",n = "+ d1.n);
+        System.out.println("m = " + d1.m + ",n = "+ d1.n); //m = 20,n = 10
     }
 
     public void swap(Data data){
@@ -22,4 +22,8 @@ public class ValueTransferTest2 {
         data.m = data.n;
         data.n = tmp;
     }
+}
+class Data {
+    int m;
+    int n;
 }

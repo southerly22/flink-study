@@ -6,6 +6,7 @@ package OrientedObject01;
  * @description: TODO
  */
 public class AssignNewObject {
+    //交换方法
     public void swap(Data data){
         data = new Data();
         int tmp = data.m;
@@ -16,10 +17,10 @@ public class AssignNewObject {
         Data data2 = new Data();
         data2.m = 10;
         data2.n = 20;
-        System.out.println("data2.m = " + data2.m + " data2.n = " + data2.n);
+        System.out.println("data2.m = " + data2.m + " data2.n = " + data2.n);//data2.m = 10 data2.n = 20
         AssignNewObject assignNewObject = new AssignNewObject();
 
         assignNewObject.swap(data2);
-        System.out.println("data2.m = " + data2.m + " data2.n = " + data2.n);
+        System.out.println("data2.m = " + data2.m + " data2.n = " + data2.n);//data2.m = 10 data2.n = 20
     }
 }
