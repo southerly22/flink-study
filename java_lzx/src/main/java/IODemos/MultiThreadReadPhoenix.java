@@ -4,53 +4,55 @@ import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.phoenix.query.QueryServices;
 
 import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * @author lzx
  * @date 2023/3/22 14:53
- * @description: TODO 多线程读文件  fileReader,10万条数据，10个线程每个线程跑200条数据，线程跑多批次，去查数据库
+ * @description: TODO 多线程读文件 3000条数据,10个线程每个线程跑300条数据，去查数据库
  */
-public class MultiThreadReadFile2 {
-    private static final Log logger = LogFactory.getFactory().getInstance(MultiThreadReadFile2.class);
-    private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-    private static final String DB_URL = "jdbc:mysql://192.168.1.73:9030/sample_data_warehouse?rewriteBatchedStatements=true&query_timeout=600";
-    private static final String TBL = "DIM_SAMPLE_INFO";
-    private static final String USER = "root";
-    private static final String PASSWD = "000000";
-
+public class MultiThreadReadPhoenix {
+    private static final Log logger = LogFactory.getFactory().getInstance(MultiThreadReadPhoenix.class);
+    private static String PHOENIX_JDBC_URL = "jdbc:phoenix:192.168.1.118:2181";
+    private static String PHOENIX_JDBC_DRIVER  = "org.apache.phoenix.jdbc.PhoenixDriver";
+    private static final String TBL = "OFFICIAL.SAMPLE_INFO";
+    private static Properties connectionProperties;
+    static {
+        connectionProperties = new Properties();
+        connectionProperties.setProperty(QueryServices.MAX_MUTATION_SIZE_ATTRIB, "500000"); //commit或rollback前，一次批量处理的最大的行数,默认500000
+        connectionProperties.setProperty(QueryServices.IS_NAMESPACE_MAPPING_ENABLED, "true"); //开启schema与namespace的对应关系
+        connectionProperties.setProperty(QueryServices.ZOOKEEPER_QUORUM_ATTRIB, "192.168.1.118,192.168.1.119,192.168.1.120:2181"); //Zookeeper URL
+        connectionProperties.setProperty("skipNormalizingIdentifier", "true"); //跳过规范化检查
+    }
     public static void main(String[] args) {
 
-        String filePath = "C:\\Users\\HR\\Desktop\\pressureTestData\\sha1.csv";
+        String filePath = "C:\\Users\\HR\\Desktop\\pressureTestData\\sha1_3000_3.csv";
 
         File file = new File(filePath);
 
         long fileSize = fileCnt(file); // 总量
         logger.warn("数据量" + fileSize);
         int numThreads = 10; // 线程数量
-        long perThreadSize = 200; // 每个线程要处理的数量
-        long batchThread = fileSize / (numThreads * perThreadSize) + 1; // 线程要跑几轮
-
+        long perThreadSize = fileSize / numThreads; // 每个线程要处理的数量
+        long remainSize = fileSize % numThreads;
         //创建线程池
         ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-        for (long j = 0; j < batchThread; j++) {
-            long mid = j * numThreads * perThreadSize;
             for (int i = 0; i < numThreads; i++) {
-                long start = Math.min(i * perThreadSize + mid,fileSize);
-                long end = Math.min((i + 1) * perThreadSize - 1 + mid,fileSize);
+                long start = i * perThreadSize;
+                long end = (i + 1) * perThreadSize - 1 ;
+                //最后一个线程特殊处理
+                if (i == numThreads - 1){
+                    end += remainSize;
+                }
                 // 线程开始执行
                 threadPool.execute(new FileReadTask(file, start, end));
-                // 文件末尾 终止循环
-                if (start == fileSize || end==fileSize) break;
             }
-        }
-
         threadPool.shutdown();
     }
 
@@ -69,13 +71,12 @@ public class MultiThreadReadFile2 {
         @Override
         public void run() {
             String threadName = Thread.currentThread().getName();
-            logger.warn("当前运行的线程： " + threadName);
             StopWatch watch = new StopWatch();
             watch.start();
             Connection conn = null;
             FileReader fileReader = null;
             BufferedReader bufferedReader = null;
-            StringBuffer stringBuffer = new StringBuffer("SELECT * FROM " + TBL + " WHERE sha1=");
+            StringBuffer stringBuffer = new StringBuffer("SELECT * FROM " + TBL + " WHERE \"rk\"=");
             long rowCnt = 0L;
             // 读文件
             try {
@@ -88,12 +89,12 @@ public class MultiThreadReadFile2 {
                         if (rowCnt == start){
                             stringBuffer.append("'".concat(str).concat("'"));
                         }else {
-                            stringBuffer.append(" OR sha1='".concat(str).concat("'"));
+                            stringBuffer.append(" OR \"rk\"='".concat(str).concat("'"));
                         }
                         if (rowCnt == end){
                             // System.out.println(stringBuffer);
                             // 查询数据库
-                            conn = DriverManager.getConnection(DB_URL,USER,PASSWD);
+                            conn = DriverManager.getConnection(PHOENIX_JDBC_URL,connectionProperties);
                             getData(stringBuffer.toString(),conn);
                         }
                     }
@@ -143,11 +144,10 @@ public class MultiThreadReadFile2 {
 
     //读取数据库 获取结果
     public static void getData(String sql, Connection conn) {
-        logger.warn("获取数据库 数据。。。");
         PreparedStatement preparedStatement = null;
         JSONObject jsonObject = new JSONObject();
         try {
-            Class.forName(JDBC_DRIVER);
+            Class.forName(PHOENIX_JDBC_DRIVER);
             preparedStatement = conn.prepareStatement(sql);
             ResultSet rs = preparedStatement.executeQuery();
             ResultSetMetaData metaData = rs.getMetaData();
