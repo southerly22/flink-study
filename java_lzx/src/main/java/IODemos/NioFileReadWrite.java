@@ -22,9 +22,11 @@ public class NioFileReadWrite {
     private static final int THREAD_POOL = 10; //线程池大小
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        Path inputFile = Paths.get("input.txt");
-        Path outputFile = Paths.get("output.txt");
-
+        Path inputFile = Paths.get("C:\\Users\\HR\\Desktop\\JavaIO\\readFile.txt");
+        Path outputFile = Paths.get("C:\\Users\\HR\\Desktop\\JavaIO\\writeFile.txt");
+        if (outputFile.toFile().exists()) {
+            outputFile.toFile().delete();
+        }
         // 使用java NIO读取文件内容
         FileChannel inputChannel = FileChannel.open(inputFile);
         ByteBuffer inputBuffer = ByteBuffer.allocate(BUFFER_SIZE);
@@ -48,9 +50,10 @@ public class NioFileReadWrite {
         int chunkSize = inputData.length() / numThread;
         for (int i = 0; i < numThread; i++) {
             int start = i * chunkSize;
-            int end = (i==numThread-1) ? inputData.length() : (i+1)*chunkSize;
-            String chunkData = inputData.substring(start,end);
-            executor.execute(new WriteChunkToFile(outputChannel,outputBuffer,chunkData));
+            int end = (i == numThread - 1) ? inputData.length() : (i + 1) * chunkSize;
+            String chunkData = inputData.substring(start, end);
+
+            executor.execute(new WriteChunkToFile(outputChannel, outputBuffer, chunkData));
         }
         executor.shutdown();
         while (!executor.isTerminated()) {
@@ -60,7 +63,7 @@ public class NioFileReadWrite {
         System.out.println("文件读写完成！");
     }
 
-    private static class WriteChunkToFile implements Runnable{
+    private static class WriteChunkToFile implements Runnable {
         private FileChannel fileChannel;
         private ByteBuffer byteBuffer;
         private String data;
@@ -73,13 +76,16 @@ public class NioFileReadWrite {
 
         @Override
         public void run() {
-            byteBuffer.clear();
-            byteBuffer.put(data.getBytes(StandardCharsets.UTF_8));
-            byteBuffer.flip();
-            try {
-                fileChannel.write(byteBuffer);
-            } catch (IOException e) {
-                System.out.println("写入文件出错！");
+            synchronized (byteBuffer){
+                byteBuffer.clear();
+                byteBuffer.put(data.getBytes(StandardCharsets.UTF_8));
+                System.out.println(Thread.currentThread().getName()+"当前线程的长度： "+data.getBytes(StandardCharsets.UTF_8).length);
+                byteBuffer.flip();
+                try {
+                    fileChannel.write(byteBuffer);
+                } catch (IOException e) {
+                    System.out.println("写入文件出错！");
+                }
             }
         }
     }

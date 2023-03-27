@@ -11,11 +11,10 @@ import java.io.RandomAccessFile;
  */
 public class RandomAccessFileDemo {
     public static void main(String[] args) {
-        String filePath = "C:\\Users\\HR\\Desktop\\javaRead.txt";
+        String filePath = "C:\\Users\\HR\\Desktop\\JavaIO\\RandomAccessFile.txt";
         File file = new File(filePath);
-        System.out.println(file.length());
         RandomAccessFileDemo rafDemo = new RandomAccessFileDemo();
-        rafDemo.readFile(file,10L,23L);
+        rafDemo.readAndWrite(file);
     }
 
     public void readFile(File file,long start,long end){
@@ -45,15 +44,14 @@ public class RandomAccessFileDemo {
     //写文件 另外指定位置读取文件
     public void readAndWrite(File file){
         try {
-            if (file.exists()) {
-                file.delete();
+            if (!file.exists()) {
                 file.createNewFile();
             }
         }catch (IOException e){
             e.printStackTrace();
         }
         try {
-            RandomAccessFile raf = new RandomAccessFile(file, "r");
+            RandomAccessFile raf = new RandomAccessFile(file, "rw");
             String str1 = "晴天，阴天，多云，小雨，大风，中雨，小雪，雷阵雨";    // 要写入的字符串
             String str2 = new String(str1.getBytes("GBK"),"ISO-8859-1");    // 编码转换
             raf.writeBytes(str2);

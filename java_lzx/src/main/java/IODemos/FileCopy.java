@@ -18,7 +18,7 @@ public class FileCopy {
             return;
         }
         File outfile = new File(outPath);
-        // fileChannel(infile,outfile);  //fileChannelRead读取完成, 缓冲区大小：20480 ,耗时：1034
+        fileChannel(infile,outfile);  //fileChannelRead读取完成, 缓冲区大小：20480 ,耗时：1034
         randomAccessRead(infile,outfile); // 1M 耗时：4507
     }
 

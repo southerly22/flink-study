@@ -34,7 +34,7 @@ public class RandomAccessFileReadLine {
         }
     }
     public static void main(String[] args) {
-        String s = readLine(35);
+        String s = readLine(25);
         System.out.println(s);
         System.out.println(readLineInterval(3, 6));
     }
