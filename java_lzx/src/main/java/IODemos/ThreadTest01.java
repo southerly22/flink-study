@@ -3,6 +3,8 @@ package IODemos;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,6 +29,14 @@ public class ThreadTest01 {
             e.printStackTrace();
         }
 
+        List<Thread> threads = new ArrayList<>();
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     static class Mytask implements Runnable{
