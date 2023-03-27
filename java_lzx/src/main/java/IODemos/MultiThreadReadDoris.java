@@ -7,60 +7,56 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * @author lzx
  * @date 2023/3/22 14:53
- * @description: TODO 多线程读文件  fileReader,10万条数据，10个线程每个线程跑200条数据，线程跑多批次，去查数据库
+ * @description: TODO 多线程读文件 3000条数据,10个线程每个线程跑300条数据，去查数据库
  */
-public class MultiThreadReadFile2 {
-    private static final Log logger = LogFactory.getFactory().getInstance(MultiThreadReadFile2.class);
+public class MultiThreadReadDoris {
+    private static final Log logger = LogFactory.getFactory().getInstance(MultiThreadReadDoris.class);
     private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-    private static final String DB_URL = "jdbc:mysql://192.168.1.73:9030/sample_data_warehouse?rewriteBatchedStatements=true&query_timeout=600";
-    private static final String TBL = "DIM_SAMPLE_INFO";
+    private static final String DB_URL = "jdbc:mysql://192.168.1.73:9030/sample_data_warehouse?useServerPrepStmts=true";
+    private static final String TBL = "sample_data_warehouse.DIM_SAMPLE_INFO_CJ";
     private static final String USER = "root";
     private static final String PASSWD = "000000";
 
     public static void main(String[] args) {
 
-        String filePath = "C:\\Users\\HR\\Desktop\\pressureTestData\\sha1.csv";
+        String filePath = "C:\\Users\\HR\\Desktop\\pressureTestData\\id_3000_04.csv";
 
         File file = new File(filePath);
 
         long fileSize = fileCnt(file); // 总量
         logger.warn("数据量" + fileSize);
-        int numThreads = 10; // 线程数量
-        long perThreadSize = 200; // 每个线程要处理的数量
-        long batchThread = fileSize / (numThreads * perThreadSize) + 1; // 线程要跑几轮
-
+        int numThreads = 15; // 线程数量
+        long perThreadSize = fileSize / numThreads; // 每个线程要处理的数量
+        long remainSize = fileSize % numThreads;
         //创建线程池
         ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-        for (long j = 0; j < batchThread; j++) {
-            long mid = j * numThreads * perThreadSize;
             for (int i = 0; i < numThreads; i++) {
-                long start = Math.min(i * perThreadSize + mid,fileSize);
-                long end = Math.min((i + 1) * perThreadSize - 1 + mid,fileSize);
+                long start = i * perThreadSize;
+                long end = (i + 1) * perThreadSize - 1 ;
+                //最后一个线程特殊处理
+                if (i == numThreads - 1){
+                    end += remainSize;
+                }
                 // 线程开始执行
-                threadPool.execute(new FileReadTask(file, start, end));
-                // 文件末尾 终止循环
-                if (start == fileSize || end==fileSize) break;
+                // threadPool.execute(new FileReadTaskSha1(file, start, end));
+                threadPool.execute(new FileReadTaskId(file, start, end));
             }
-        }
-
         threadPool.shutdown();
     }
 
-    // 读文件
-    static class FileReadTask implements Runnable {
+    // 读文件 sha1
+    static class FileReadTaskSha1 implements Runnable {
         private File file;
         private long start;
         private long end;
 
-        public FileReadTask(File file, long start, long end) {
+        public FileReadTaskSha1(File file, long start, long end) {
             this.file = file;
             this.start = start;
             this.end = end;
@@ -69,7 +65,6 @@ public class MultiThreadReadFile2 {
         @Override
         public void run() {
             String threadName = Thread.currentThread().getName();
-            logger.warn("当前运行的线程： " + threadName);
             StopWatch watch = new StopWatch();
             watch.start();
             Connection conn = null;
@@ -124,6 +119,75 @@ public class MultiThreadReadFile2 {
         }
     }
 
+    // 读文件 id
+    static class FileReadTaskId implements Runnable {
+        private File file;
+        private long start;
+        private long end;
+
+        public FileReadTaskId(File file, long start, long end) {
+            this.file = file;
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        public void run() {
+            String threadName = Thread.currentThread().getName();
+            StopWatch watch = new StopWatch();
+            watch.start();
+            Connection conn = null;
+            FileReader fileReader = null;
+            BufferedReader bufferedReader = null;
+            StringBuffer stringBuffer = new StringBuffer("SELECT /*+ SET_VAR(query_timeout = 1000) */ * FROM " + TBL + " WHERE id=");
+            long rowCnt = 0L;
+            // 读文件
+            try {
+                fileReader = new FileReader(file);
+                bufferedReader = new BufferedReader(fileReader);
+                String str;
+                while ((str = bufferedReader.readLine()) != null) {
+                    if (rowCnt >= start && rowCnt <= end){
+                        // 拼接sql
+                        if (rowCnt == start){
+                            stringBuffer.append(str);
+                        }else {
+                            stringBuffer.append(" OR id=").append(str);
+                        }
+                        if (rowCnt == end){
+                            System.out.println(stringBuffer);
+                            // 查询数据库
+                            conn = DriverManager.getConnection(DB_URL,USER,PASSWD);
+                            getData(stringBuffer.toString(),conn);
+                        }
+                    }
+                    rowCnt ++;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }finally {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    fileReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    if (conn!=null) conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                stringBuffer.setLength(0);
+            }
+            watch.stop();
+            logger.warn("线程：" +threadName+", 处理数据："+(end - start +1) +"条, 耗费时间："+watch.getTime()+"ms");
+        }
+    }
+
     // 获取文件行数
     public static long fileCnt(File file) {
         long cnt = 0L;
@@ -143,7 +207,6 @@ public class MultiThreadReadFile2 {
 
     //读取数据库 获取结果
     public static void getData(String sql, Connection conn) {
-        logger.warn("获取数据库 数据。。。");
         PreparedStatement preparedStatement = null;
         JSONObject jsonObject = new JSONObject();
         try {
