@@ -22,7 +22,7 @@ public class RandomAccessFileReadLine {
             int lineSize = 0;
             // 记录已经读取到的字节总大小
             int totalSize = 0;
-            String readLine = null;
+            String readLine ;
             while ((readLine = br.readLine()) != null) {
                 lineSize = readLine.getBytes().length;
                 POINT_LIST.add(totalSize);

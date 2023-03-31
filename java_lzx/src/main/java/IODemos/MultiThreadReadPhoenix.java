@@ -7,8 +7,17 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.phoenix.query.QueryServices;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,11 +39,14 @@ public class MultiThreadReadPhoenix {
         connectionProperties.setProperty(QueryServices.ZOOKEEPER_QUORUM_ATTRIB, "192.168.1.118,192.168.1.119,192.168.1.120:2181"); //Zookeeper URL
         connectionProperties.setProperty("skipNormalizingIdentifier", "true"); //跳过规范化检查
     }
-    public static void main(String[] args) {
+    private static int bufferSize = 1024 *1024;
+    public static void main(String[] args) throws IOException {
 
         String filePath = "C:\\Users\\HR\\Desktop\\pressureTestData\\sha1_3000_3.csv";
-
         File file = new File(filePath);
+
+        FileChannel outChannel = FileChannel.open(Paths.get("C:\\Users\\HR\\Desktop\\JavaIO\\result.txt"), StandardOpenOption.CREATE,StandardOpenOption.WRITE);
+        ByteBuffer outBuffer = ByteBuffer.allocate(bufferSize);
 
         long fileSize = fileCnt(file); // 总量
         logger.warn("数据量" + fileSize);
@@ -51,7 +63,7 @@ public class MultiThreadReadPhoenix {
                     end += remainSize;
                 }
                 // 线程开始执行
-                threadPool.execute(new FileReadTask(file, start, end));
+                threadPool.execute(new FileReadTask(file, start, end,outChannel,outBuffer));
             }
         threadPool.shutdown();
     }
@@ -61,6 +73,16 @@ public class MultiThreadReadPhoenix {
         private File file;
         private long start;
         private long end;
+        private FileChannel fileChannel;
+        private ByteBuffer byteBuffer;
+
+        public FileReadTask(File file, long start, long end, FileChannel fileChannel, ByteBuffer byteBuffer) {
+            this.file = file;
+            this.start = start;
+            this.end = end;
+            this.fileChannel = fileChannel;
+            this.byteBuffer = byteBuffer;
+        }
 
         public FileReadTask(File file, long start, long end) {
             this.file = file;
@@ -95,7 +117,7 @@ public class MultiThreadReadPhoenix {
                             // System.out.println(stringBuffer);
                             // 查询数据库
                             conn = DriverManager.getConnection(PHOENIX_JDBC_URL,connectionProperties);
-                            getData(stringBuffer.toString(),conn);
+                            getData(stringBuffer.toString(), conn,fileChannel,byteBuffer);
                         }
                     }
                     rowCnt ++;
@@ -143,7 +165,7 @@ public class MultiThreadReadPhoenix {
     }
 
     //读取数据库 获取结果
-    public static void getData(String sql, Connection conn) {
+    public static void getData(String sql, Connection conn,FileChannel fileChannel,ByteBuffer byteBuffer) {
         PreparedStatement preparedStatement = null;
         JSONObject jsonObject = new JSONObject();
         try {
@@ -155,7 +177,6 @@ public class MultiThreadReadPhoenix {
                 for (int i = 1; i < metaData.getColumnCount(); i++) {
                     jsonObject.put(metaData.getColumnName(i),rs.getObject(i));
                 }
-                // System.out.println(jsonObject);
             }
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -168,5 +189,17 @@ public class MultiThreadReadPhoenix {
                 }
             }
         }
+        // 写入文件
+        synchronized (byteBuffer){
+            byteBuffer.clear();
+            byteBuffer.put(jsonObject.toString().getBytes(StandardCharsets.UTF_8));
+            byteBuffer.flip();
+            try {
+                fileChannel.write(byteBuffer);
+            } catch (IOException e) {
+                System.out.println("文件写入失败! "+e.getMessage());
+            }
+        }
+        logger.warn("文件写入成功！");
     }
 }
