@@ -12,7 +12,7 @@
     <artifactId>flink-java</artifactId>
 
     <properties>
-        <flink.version>1.13.0</flink.version>
+        <flink.version>1.14.4</flink.version>
         <java.version>1.8</java.version>
         <scala.binary.version>2.12</scala.binary.version>
         <mysql.version>8.0.28</mysql.version>
@@ -41,12 +41,32 @@
             <artifactId>flink-runtime-web_2.12</artifactId>
             <version>${flink.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-planner_2.12</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-runtime_2.12</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- flink kakfa -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka_2.12</artifactId>
             <version>${flink.version}</version>
+        </dependency>
+
+        <!--flink hbase -->
+        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-connector-hbase-2.2 -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-hbase-2.2_2.12</artifactId>
+            <version>1.13.0</version>
         </dependency>
 
         <!-- mysql -->
@@ -87,6 +107,12 @@
             <artifactId>flink-connector-files</artifactId>
             <version>${flink.version}</version>
         </dependency>
+        <!-- Flink写 kafka -->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.flink</groupId>-->
+<!--            <artifactId>flink-connector-kafka-0.11_2.12</artifactId>-->
+<!--            <version>${flink.version}</version>-->
+<!--        </dependency>-->
 
 
         <!-- 引入日志管理相关依赖-->
