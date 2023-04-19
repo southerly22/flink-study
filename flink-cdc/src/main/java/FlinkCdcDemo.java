@@ -53,9 +53,9 @@ public class FlinkCdcDemo {
         env.enableCheckpointing(3000);
         env.getCheckpointConfig().setCheckpointStorage("file:///D:\\WorkPlace\\flink-study\\flink-cdc\\src\\ck");
         // 使用cdcSource 从mysql 读取数据
-        env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(),"mysql_source")
+        env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "mysql_source")
                 .setParallelism(4)
-                        .print().setParallelism(1);
+                .print().setParallelism(1);
 
         env.execute();
     }
