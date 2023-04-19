@@ -14,15 +14,16 @@ public class JoinDemo extends Thread {
     public JoinDemo(int i, Thread previousThread) {
         this.i = i;
         this.previousThread = previousThread;
+        System.out.println(previousThread.getName());
     }
 
     @Override
     public void run() {
         // 增加一个随机的睡眠，不然会出现乱序情况，当previousThread.join() 被注释的时候
-        Random random = new Random();
-        int i = random.nextInt(1000);
+        //Random random = new Random();
+        //int i = random.nextInt(1000);
         try {
-            Thread.sleep(i);
+            //Thread.sleep(i);
             // 调用上一个线程的join方法，当前线程的正常运行需要上一个线程的结束，保证有序性
             previousThread.join();
         } catch (InterruptedException e) {

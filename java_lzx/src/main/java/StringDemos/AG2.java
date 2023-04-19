@@ -1,6 +1,5 @@
 package StringDemos;
 
-import com.sun.xml.internal.bind.v2.model.core.ID;
 
 /**
  * @author lzx
