@@ -1,4 +1,4 @@
-package kafkaPartition;
+package kafka_sort.producer;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;

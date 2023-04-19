@@ -45,13 +45,13 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-table-planner_2.12</artifactId>
             <version>${flink.version}</version>
-            <scope>provided</scope>
+<!--            <scope>provided</scope>-->
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-table-runtime_2.12</artifactId>
             <version>${flink.version}</version>
-            <scope>provided</scope>
+<!--            <scope>provided</scope>-->
         </dependency>
 
         <!-- flink kakfa -->
@@ -68,7 +68,11 @@
             <artifactId>flink-connector-hbase-2.2_2.12</artifactId>
             <version>1.13.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-json</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
         <!-- mysql -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -137,7 +141,7 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.22</version>
-            <scope>provided</scope>
+<!--            <scope>provided</scope>-->
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
         <dependency>

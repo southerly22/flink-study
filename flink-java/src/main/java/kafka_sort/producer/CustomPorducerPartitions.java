@@ -1,4 +1,4 @@
-package kafkaPartition;
+package kafka_sort.producer;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -14,7 +14,7 @@ public class CustomPorducerPartitions {
     public static void main(String[] args) {
         //1. 创建kafka生产者配置对象
         Properties properties = new Properties();
-        properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"node03:9092,node04:9092,node05:9092,node71:9092,node178:9092");
+        properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"localhost:9094,localhost:9092,localhost:9093");
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
@@ -22,7 +22,7 @@ public class CustomPorducerPartitions {
         // 发送数据
         for (int i = 0; i < 5; i++) {
             // 往分区 1 里面发送数据，指定 key 为空
-            kafkaProducer.send(new ProducerRecord<Object, Object>("kafkaOrderTest", 1, "", "testMessage" + i), new Callback() {
+            kafkaProducer.send(new ProducerRecord<Object, Object>("lzx_test", 1, "", "testMessage" + i), new Callback() {
                 @Override
                 public void onCompletion(RecordMetadata metadata, Exception exception) {
                     if (exception == null){
