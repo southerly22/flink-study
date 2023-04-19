@@ -13,6 +13,7 @@
         <module>flink-java</module>
         <module>flink-cdc</module>
         <module>java_lzx</module>
+        <module>kafka-sort</module>
     </modules>
 
     <properties>
