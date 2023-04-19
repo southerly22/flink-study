@@ -13,14 +13,14 @@ public class KafkaSourceDemo {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
-                .setBootstrapServers("192.168.1.56:9092")
+                .setBootstrapServers("localhost:9094,localhost:9092,localhost:9093")
                 .setTopics("lzx_test")
-                .setGroupId("test01")
+                .setGroupId("lzx_test0418")
                 //kafka 偏移量的选择
                 //OffsetsInitializer.latest()  最新的
-                //OffsetsInitializer.earliest() 最早的
+                //OffsetsInitializer.earliest() //最早的
                 //OffsetsInitializer.offsets(Map< TopicPartition,Long >) 自定位置
-                .setStartingOffsets(OffsetsInitializer.latest())
+                .setStartingOffsets(OffsetsInitializer.earliest())
                 //value 的反序列化器
                 .setValueOnlyDeserializer(new SimpleStringSchema())
 
@@ -28,7 +28,7 @@ public class KafkaSourceDemo {
                 // 他会把最新的offsets 提交到kafka_consumer  topic里面
                 // 就算开启此机制，kafkaSource依然不依赖自定提交机制
                 // （宕机时 重启时优先从flink的状态算子里面去获取offset《更可靠》）
-                .setProperty("auto.offset.commit", "true")
+                .setProperty("auto.offset.commit", "false")
 
                 // 把source设置为有界流，此时用该source读取数据时，读到指定的位置，程序就会退出执行
                 // 场景：补全数据，重跑某段数据
