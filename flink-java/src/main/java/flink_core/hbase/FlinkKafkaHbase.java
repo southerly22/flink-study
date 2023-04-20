@@ -1,4 +1,4 @@
-package flink_hbase;
+package flink_core.hbase;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.ExecutionMode;
