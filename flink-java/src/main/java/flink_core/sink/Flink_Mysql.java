@@ -1,4 +1,4 @@
-package sink;
+package flink_core.sink;
 
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;

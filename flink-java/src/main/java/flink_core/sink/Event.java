@@ -1,4 +1,4 @@
-package sink;
+package flink_core.sink;
 
 import lombok.*;
 

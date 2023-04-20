@@ -1,4 +1,4 @@
-package sink;
+package flink_core.sink;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
@@ -9,8 +9,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.filesystem.OutputFileConfig;
 import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.DateTimeBucketAssigner;
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy;
-import source.EventLog;
-import source.MyRichSourceFunction;
+import flink_core.source.EventLog;
+import flink_core.source.MyRichSourceFunction;
 
 
 /***
