@@ -1,27 +1,22 @@
-package source;
+package flink_core.source;
 
-import lombok.*;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
-import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class CustomSourceFunction {
 
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        //DataStreamSource<EventLog> streamSource = env.addSource(new MySourceFunction());
-        DataStreamSource<EventLog> streamSource = env.addSource(new MyRichSourceFunction());
+        DataStreamSource<EventLog> streamSource = env.addSource(new MySourceFunction());
+        // DataStreamSource<EventLog> streamSource = env.addSource(new MyRichSourceFunction());
         streamSource.print();
 
         env.execute();
@@ -52,7 +47,7 @@ class MySourceFunction implements SourceFunction<EventLog>{
             eventLog.setGuid(RandomUtils.nextLong(1,100));
             eventLog.setSessionId(RandomStringUtils.randomAlphanumeric(12).toUpperCase());
             eventLog.setEventId(RandomStringUtils.randomAlphabetic(5));
-            eventLog.setTimeStampt(System.currentTimeMillis());
+            eventLog.setTimeStamp(System.currentTimeMillis());
             map.put(String.valueOf(RandomUtils.nextInt(1,100)),RandomStringUtils.randomAlphabetic(3));
             eventLog.setEventInfo(map);
 

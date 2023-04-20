@@ -1,21 +1,26 @@
-package flink_join;
+package flink_sql.join;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.connector.ChangelogMode;
+import org.apache.flink.types.Row;
 
 import java.time.ZoneId;
 
 /**
- * kafka source
+ * 将FlinkSql的结果 转换为 DataStream数据流
  *
  * @author lzx
  * @date 2023/04/19 10:12
  **/
-public class KafkaSourceFlinkSql {
-    public static void main(String[] args) {
+public class KafkaSourceFlinkDs {
+    public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        conf.setInteger("rest.port",8085);
+        conf.setInteger("rest.port", 8085);
 
         // 可以基于现有的 StreamExecutionEnvironment 创建 StreamTableEnvironment 来与 DataStream API 进行相互转换
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
@@ -41,25 +46,24 @@ public class KafkaSourceFlinkSql {
                 "    )";
         tEnv.executeSql(inTable);
 
-        // 创建输出表
-        String outTable = "CREATE TABLE kafka_sink( \n" +
-                "    age INT NOT NULL,\n" +
-                "    cnt BIGINT,\n" +
-                "    PRIMARY KEY(age) NOT ENFORCED\n" +
-                "    ) WITH( \n" +
-                "        'connector' = 'upsert-kafka',\n" +
-                "        'topic'='kafka_source_out',\n" +
-                "        'properties.bootstrap.servers'='localhost:9094,localhost:9092,localhost:9093',\n" +
-                "        'key.format' = 'json',\n" +
-                "        'value.format' = 'json'\n" +
-                "    )";
-        tEnv.executeSql(outTable);
 
-        // 结果计算
-        String res = "insert into kafka_sink\n" +
-                "select age,count(1) as cnt \n" +
+        // 结果计算  // groupby 在回撤老数据时采用的是-U  join用的是 -D
+        String res = "select age,count(1) as cnt \n" +
                 "from kafka_source\n" +
                 "group by age";
-        tEnv.executeSql(res);
+
+        // 转换流
+        Table resTable = tEnv.sqlQuery(res);
+        DataStream<Row> resDS = tEnv.toChangelogStream(resTable,
+                Schema.newBuilder().build(),
+                ChangelogMode.all()
+        );
+
+        // 打印
+        resDS.print();
+
+        // 执行
+        env.execute("flinkSql_2_flinkDs");
+
     }
 }

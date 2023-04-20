@@ -1,4 +1,4 @@
-package source;
+package flink_core.source;
 
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;

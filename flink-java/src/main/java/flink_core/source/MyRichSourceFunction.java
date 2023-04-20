@@ -1,4 +1,4 @@
-package source;
+package flink_core.source;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -27,7 +27,7 @@ public class MyRichSourceFunction extends RichSourceFunction<EventLog> {
             eventLog.setGuid(RandomUtils.nextLong(1, 100));
             eventLog.setSessionId(RandomStringUtils.randomAlphanumeric(1024).toUpperCase());
             eventLog.setEventId(RandomStringUtils.randomAlphabetic(5));
-            eventLog.setTimeStampt(System.currentTimeMillis());
+            eventLog.setTimeStamp(System.currentTimeMillis());
             map.put(String.valueOf(RandomUtils.nextInt(1, 100)), RandomStringUtils.randomAlphabetic(3));
             eventLog.setEventInfo(map);
 

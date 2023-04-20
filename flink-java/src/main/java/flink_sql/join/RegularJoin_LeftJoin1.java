@@ -1,7 +1,8 @@
-package flink_join;
+package flink_sql.join;
 
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import java.time.ZoneId;
 
@@ -11,11 +12,15 @@ import java.time.ZoneId;
  * @author lzx
  * @date 2023/04/18 17:03
  **/
-public class RegularJoin_InnerJoin {
-    public static void main(String[] args) {
-        // 创建 tableApi的执行环境
-        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
-        TableEnvironment tEnv = TableEnvironment.create(settings);
+public class RegularJoin_LeftJoin1 {
+    public static void main(String[] args) throws Exception {
+
+        Configuration conf = new Configuration();
+        conf.setInteger("rest.port",8085);
+
+        // 可以基于现有的 StreamExecutionEnvironment 创建 StreamTableEnvironment 来与 DataStream API 进行相互转换
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
 
         // 指定国内时区
         tEnv.getConfig().setLocalTimeZone(ZoneId.of("Asia/Shanghai"));
@@ -57,13 +62,14 @@ public class RegularJoin_InnerJoin {
         String resTableSql = "CREATE TABLE order_payment( \n" +
                 "    order_id BIGINT,\n" +
                 "    pay_money BIGINT,\n" +
-                "    d_ts TIMESTAMP_LTZ(3)\n" +
+                "    d_ts TIMESTAMP_LTZ(3),\n" +
+                "    PRIMARY KEY(order_id) NOT ENFORCED\n" +
                 "    ) WITH( \n" +
-                "        'connector' = 'kafka',\n" +
+                "        'connector' = 'upsert-kafka',\n" + //left join有回撤流，只可以使用upsert-kafka，同时还要指定key的format
                 "        'topic'='order_payment',\n" +
                 "        'properties.bootstrap.servers'='localhost:9094,localhost:9092,localhost:9093',\n" +
-                "        'format' = 'json',\n" +
-                "        'sink.partitioner' = 'default'\n" +  //inner join没有回撤流，可以使用kafka
+                "        'key.format' = 'json',\n" +
+                "        'value.format' = 'json'\n" +
                 "    )";
 
         tEnv.executeSql(resTableSql);
@@ -75,7 +81,7 @@ public class RegularJoin_InnerJoin {
                 "  pf.pay_money,\n" +
                 "  uo.d_ts\n" +
                 "from user_order as uo\n" +
-                "join payment_flow pf\n" +
+                "left join payment_flow pf\n" +
                 "on uo.order_id = pf.order_id";
 
         tEnv.executeSql(joinSql);

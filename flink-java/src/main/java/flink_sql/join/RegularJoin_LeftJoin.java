@@ -1,10 +1,8 @@
-package flink_join;
+package flink_sql.join;
 
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import java.time.ZoneId;
 
@@ -14,15 +12,22 @@ import java.time.ZoneId;
  * @author lzx
  * @date 2023/04/18 17:03
  **/
-public class RegularJoin_LeftJoin1 {
+public class RegularJoin_LeftJoin {
+    // private String kafkaServers = "localhost:9094,localhost:9092,localhost:9093"; //docker
+    private String kafkaServers = "node03:9092,node04:9092,node05:9092"; //company
+
     public static void main(String[] args) throws Exception {
 
         Configuration conf = new Configuration();
         conf.setInteger("rest.port",8085);
 
         // 可以基于现有的 StreamExecutionEnvironment 创建 StreamTableEnvironment 来与 DataStream API 进行相互转换
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
+        //StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
+        //StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+
+        // 创建 tableApi的执行环境
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+        TableEnvironment tEnv = TableEnvironment.create(settings);
 
         // 指定国内时区
         tEnv.getConfig().setLocalTimeZone(ZoneId.of("Asia/Shanghai"));
@@ -35,7 +40,7 @@ public class RegularJoin_LeftJoin1 {
                 "    ) WITH( \n" +
                 "        'connector' = 'kafka',\n" +
                 "        'topic'='user_order',\n" +
-                "        'properties.bootstrap.servers'='localhost:9094,localhost:9092,localhost:9093',\n" +
+                "        'properties.bootstrap.servers'='node03:9092,node04:9092,node05:9092',\n" +
                 "        'properties.group.id' = 'gid-sql-order',\n" +
                 "        'scan.startup.mode' = 'latest-offset',\n" +
                 "        'format' = 'json',\n" +
@@ -51,7 +56,7 @@ public class RegularJoin_LeftJoin1 {
                 "    ) WITH( \n" +
                 "        'connector' = 'kafka',\n" +
                 "        'topic'='payment_flow',\n" +
-                "        'properties.bootstrap.servers'='localhost:9094,localhost:9092,localhost:9093',\n" +
+                "        'properties.bootstrap.servers'='node03:9092,node04:9092,node05:9092',\n" +
                 "        'properties.group.id' = 'gid-sql-pay',\n" +
                 "        'scan.startup.mode' = 'latest-offset',\n" +
                 "        'format' = 'json',\n" +
@@ -69,7 +74,7 @@ public class RegularJoin_LeftJoin1 {
                 "    ) WITH( \n" +
                 "        'connector' = 'upsert-kafka',\n" + //left join有回撤流，只可以使用upsert-kafka，同时还要指定key的format
                 "        'topic'='order_payment',\n" +
-                "        'properties.bootstrap.servers'='localhost:9094,localhost:9092,localhost:9093',\n" +
+                "        'properties.bootstrap.servers'='node03:9092,node04:9092,node05:9092',\n" +
                 "        'key.format' = 'json',\n" +
                 "        'value.format' = 'json'\n" +
                 "    )";
