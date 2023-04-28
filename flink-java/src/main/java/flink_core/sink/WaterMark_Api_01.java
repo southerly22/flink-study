@@ -10,6 +10,12 @@ import java.time.Duration;
 /**
  * @author lzx
  * @date 2023/04/26 18:19
+ * @desc watermark生成设置相关代码演示
+ *  *       及单并行度情况下的watermark推进观察
+ *  *
+ *  *   ==> 在socket端口依次输入如下两条数据：
+ *  *   1,e06,3000,page02
+ *  *   1,e06,3000,page02
  **/
 public class WaterMark_Api_01 {
     public static void main(String[] args) throws Exception {
@@ -32,7 +38,7 @@ public class WaterMark_Api_01 {
 
         // 1.构造一个watermark 生成策略对象（算法策略 以及事件时间抽取方法）
         WatermarkStrategy<String> watermarkStrategy = WatermarkStrategy
-                .<String>forBoundedOutOfOrderness(Duration.ofMillis(0)) //允许乱序的算法策略
+                .<String>forBoundedOutOfOrderness(Duration.ZERO) //允许乱序的算法策略
                 .withTimestampAssigner((element, recordTimestamp) -> Long.parseLong(element.split(",")[2]));
 
         // 2.将构造好的watermark 策略对象，分配给流（Source算子）
