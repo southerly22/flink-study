@@ -28,7 +28,7 @@ public class Window_Api_Demo3 {
         configuration.setInteger("rest.port", 8085);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration);
 
-        DataStreamSource<String> source = env.socketTextStream("localhost", 9999);
+        DataStreamSource<String> source = env.socketTextStream("192.168.1.76", 9999);
         env.setParallelism(1);
 
         SingleOutputStreamOperator<EventBean> beanStream = source.map(s -> {
@@ -51,7 +51,7 @@ public class Window_Api_Demo3 {
 
         SingleOutputStreamOperator<String> resultStream = watermarkedBeanStream.keyBy(EventBean::getGuid)
                 .window(TumblingEventTimeWindows.of(Time.seconds(10)))
-                .allowedLateness(Time.seconds(2))
+                .allowedLateness(Time.seconds(2)) //允许迟到2s，如果watermark（此时的事件时间）推进到A窗口结束时间后2s，此时还来A窗口内的数据，则会输出到测输出流中
                 .sideOutputLateData(lateTag)
                 .apply(new WindowFunction<EventBean, String, Long, TimeWindow>() {
                     @Override
@@ -66,7 +66,7 @@ public class Window_Api_Demo3 {
 
         resultStream.print("主流");
 
-        // 迟到数据 ： 输出条件：当窗口推进到 窗口时间+迟到时间时，此时再来该窗口内的数据时此时会输出到迟到流中
+        // 迟到数据 ： water到22s时，再来[10,20)窗口内的数据，会被输出到侧输出流里面
         resultStream.getSideOutput(lateTag).print("迟到数据");
 
         env.execute();
