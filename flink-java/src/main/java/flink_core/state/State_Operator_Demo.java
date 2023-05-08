@@ -18,7 +18,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  * @author lzx
  * @date 2023/05/07 19:32
  **/
-public class State_Api_Demo1 {
+public class State_Operator_Demo {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         conf.setInteger("rest.port",8085);
@@ -56,7 +56,7 @@ class MyStateMapFunction implements MapFunction<String,String> , CheckpointedFun
         /**
          * 故意埋一个异常，来测试task级别的容错
          */
-        if ("x".equals(value) || RandomUtils.nextInt(1,10) % 2 == 0) {
+        if ("x".equals(value) && RandomUtils.nextInt(1,10) % 2 == 0) {
             throw new Exception("出错了");
         }
 
