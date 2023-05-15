@@ -43,14 +43,20 @@ public class State_TTL_Demo {
                         .setTtl(Time.milliseconds(3000)) // 配置数据存活时长
 
                         // .updateTtlOnReadAndWrite() // 读、写 都导致该条数据 ttl 重新计时，延迟清理时限
-                        // .setUpdateType(StateTtlConfig.UpdateType.OnReadAndWrite) // 同上
+                         .setUpdateType(StateTtlConfig.UpdateType.OnReadAndWrite) // 同上
                         // .updateTtlOnCreateAndWrite() // 插入、更新 都导致该条数据 ttl 重新计时，延迟清理时限
                         //
                         // .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired) // 不允许返回ttl到期，但还未清理的数据
                         // .setStateVisibility(StateTtlConfig.StateVisibility.ReturnExpiredIfNotCleanedUp) // 允许返回ttl到期，但还未清理的数据
 
                         // .setTtlTimeCharacteristic(StateTtlConfig.TtlTimeCharacteristic.ProcessingTime)// ttl计时的时间语义，处理时间
-                        .useProcessingTime()
+                        .useProcessingTime() // ttl计时的时间语义，处理时间
+
+                         // 下面三种 过期检查清除策略，不是覆盖关系，而是添加关系
+                        .cleanupIncrementally(5,false) //默认策略
+                        .cleanupIncrementally(1000,true) //增量清除（每当一条数据被访问，则会检查这条数据的ttl是否超时，是就删除）
+                        .cleanupFullSnapshot() // 全量快照清除策略（在checkpoint 的时候 保存到快照中的只包含未过期的状态数据，但是他并不会清理算子本地状态
+                        .cleanupInRocksdbCompactFilter(1000) // 在rockdb的compact机制中添加过期数据过滤器 以在compact过程中清理掉过期状态数据
 
                         .build();
 

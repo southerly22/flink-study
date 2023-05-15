@@ -92,5 +92,12 @@ class MyStateMapFunction implements MapFunction<String,String> , CheckpointedFun
         // getListState方法在task任务失败后，task任务重启时会帮助用户自动加载最新一份的状态数据
         // 如果是Job重启，则不会自动加载此前的快照的状态数据
          listState = operatorStateStore.getListState(stateDescriptor);
+
+         /**
+          * unionListState和listState的区别
+          * @author lzx
+          * @date 2023-05-12 11:08
+          */
+        ListState<String> unionListState = operatorStateStore.getUnionListState(stateDescriptor);
     }
 }

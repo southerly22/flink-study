@@ -127,6 +127,12 @@
 <!--            <version>${flink.version}</version>-->
 <!--        </dependency>-->
 
+        <!-- rocksdb 状态后端 -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-statebackend-rocksdb_2.12</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
 
         <!-- 引入日志管理相关依赖-->
         <dependency>
