@@ -44,15 +44,16 @@ import java.sql.SQLException;
 public class TolerancCodeTest {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
+        conf.setInteger("rest.port",8085);
         //从保存点 启动程序
         //conf.setString("execution.savepoint.path", "file:////Users/liuzhixin/codeplace/flink-study/flink-java/ck");
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
         env.setParallelism(1);
         /**
          *  checkpoint 容错机制
          */
         env.enableCheckpointing(1000, CheckpointingMode.EXACTLY_ONCE);
-        env.getCheckpointConfig().setCheckpointStorage("file:////Users/liuzhixin/codeplace/flink-study/flink-java/ck");
+        env.getCheckpointConfig().setCheckpointStorage("file:///D:\\WorkPlace\\flink-study\\flink-java\\ck");
         /**
          *  task 容错机制
          */
@@ -85,12 +86,14 @@ public class TolerancCodeTest {
          *  构造一个支持精确一致性的 jdbcSink
          */
         SinkFunction<String> exactlyOnceJdbcSink = JdbcSink.exactlyOnceSink(
-                "insert into t_eos values(?) on duplicate key update str = ?",
+                "insert into t_eos values(?,?) on duplicate key update id = ?",
                 new JdbcStatementBuilder<String>() {
                     @Override
                     public void accept(PreparedStatement preparedStatement, String s) throws SQLException {
-                        preparedStatement.setString(1, s);
-                        preparedStatement.setString(2, s);
+                        String[] arr = s.split(",");
+                        preparedStatement.setInt(1, Integer.parseInt(arr[0]));
+                        preparedStatement.setString(2, arr[1]);
+                        preparedStatement.setInt(3, Integer.parseInt(arr[0]));
                     }
                 },
                 JdbcExecutionOptions.builder()
@@ -142,6 +145,7 @@ public class TolerancCodeTest {
                         }
 
                         return preStr + ":" + element.toUpperCase();
+                        // return element;
                     }
                 });
 
