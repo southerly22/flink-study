@@ -1,4 +1,4 @@
-package flink_core.huorong;
+package huorong;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;

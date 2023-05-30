@@ -1,4 +1,4 @@
-package flink_core.huorong;
+package huorong;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
