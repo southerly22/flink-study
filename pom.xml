@@ -14,6 +14,9 @@
         <module>flink-cdc</module>
         <module>java_lzx</module>
         <module>kafka-sort</module>
+        <module>Phoenix_Server</module>
+        <module>flink-sql</module>
+        <module>flink-hbase</module>
     </modules>
 
     <properties>

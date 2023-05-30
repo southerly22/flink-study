@@ -18,6 +18,15 @@ public class TestPriority {
         t1.setPriority(Thread.MAX_PRIORITY);
         t1.start();
 
+        Thread t2 = new Thread("t2") {
+            @Override
+            public void run() {
+                System.out.println(getName() +"优先级"+ getPriority());
+            }
+        };
+        t2.setPriority(Thread.MIN_PRIORITY);
+        t2.start();
+
         System.out.println("main线程优先级：" + Thread.currentThread().getPriority());
     }
 }

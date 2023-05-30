@@ -1,13 +1,10 @@
-package flink_core.huorong;
+package huorong;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import flink_core.source.EventLog;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -22,14 +19,11 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.TopicPartition;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -41,10 +35,10 @@ import java.util.concurrent.TimeUnit;
 public class HrKafkaSource {
     public static void main(String[] args) throws Exception {
         // 解析参数
-        ParameterTool parameterTool = ParameterTool.fromArgs(args);
-        String topic = parameterTool.get("t");
-        String gid = parameterTool.get("gid");
-        System.out.println(String.format("%s,%s", topic, gid));
+        //ParameterTool parameterTool = ParameterTool.fromArgs(args);
+        //String topic = parameterTool.get("t");
+        //String gid = parameterTool.get("gid");
+        //System.out.println(String.format("%s,%s", topic, gid));
 
         Configuration configuration = new Configuration();
         configuration.setInteger("rest.port", 8085);
@@ -55,7 +49,7 @@ public class HrKafkaSource {
 
         // 检查点
         env.enableCheckpointing(1000, CheckpointingMode.EXACTLY_ONCE);
-        env.getCheckpointConfig().setCheckpointStorage("file:///D:\\WorkPlace\\flink-study\\flink-java\\ck");
+        env.getCheckpointConfig().setCheckpointStorage("file:////Users/liuzhixin/codeplace/flink-study/flink-hbase/ck");
         env.getCheckpointConfig().setExternalizedCheckpointCleanup(CheckpointConfig.ExternalizedCheckpointCleanup.DELETE_ON_CANCELLATION);
         // 容错
         env.setRestartStrategy(RestartStrategies.noRestart());
@@ -64,12 +58,12 @@ public class HrKafkaSource {
 
         // 指定分区
         HashMap<TopicPartition, Long> topicMap = new HashMap<>();
-        topicMap.put(new TopicPartition("task_mapping",0),129630118L);
-        topicMap.put(new TopicPartition("task_mapping",1),129630606L);
-        topicMap.put(new TopicPartition("task_mapping",2),129630453L);
-        topicMap.put(new TopicPartition("task_mapping",3),129630300L);
-        topicMap.put(new TopicPartition("task_mapping",4),129630667L);
-        topicMap.put(new TopicPartition("task_mapping",5),129630380L);
+        topicMap.put(new TopicPartition("task_mapping", 0), 129630118L);
+        topicMap.put(new TopicPartition("task_mapping", 1), 129630606L);
+        topicMap.put(new TopicPartition("task_mapping", 2), 129630453L);
+        topicMap.put(new TopicPartition("task_mapping", 3), 129630300L);
+        topicMap.put(new TopicPartition("task_mapping", 4), 129630667L);
+        topicMap.put(new TopicPartition("task_mapping", 5), 129630380L);
 
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
                 .setBootstrapServers("192.168.1.56:9092,192.168.1.61:9092,192.168.1.58:9092,192.168.3.71:9092,192.168.3.178:9092")
@@ -100,30 +94,10 @@ public class HrKafkaSource {
                 TimeUnit.SECONDS
         );
 
-        resDS.print();
+        //resDS.print();
 
-        // // todo 构建普通 sink
-        // JdbcSink.sink(
-        //         "insert into EventLog values (?,?,?,?,?);",
-        //         new JdbcStatementBuilder<JSONObject>() {
-        //             @Override
-        //             public void accept(PreparedStatement ps, JSONObject e) throws SQLException {
-        //
-        //             }
-        //         },
-        //         JdbcExecutionOptions.builder()
-        //                 .withBatchSize(10)
-        //                 .withMaxRetries(0)
-        //                 .build(),
-        //         new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-        //                 .withUrl("jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=UTF-8")
-        //                 .withDriverName("com.mysql.cj.jdbc.Driver")
-        //                 // .withUsername("root")
-        //                 // .withPassword("123456")
-        //                 .build()
-        // );
-        //
-        // resDS.addSink()
+        //写入
+        resDS.addSink(new PhoenixSink(" USDP", "SAMPLE_WIDTH_TABLE_9999", 1000L));
         env.execute();
     }
 }
