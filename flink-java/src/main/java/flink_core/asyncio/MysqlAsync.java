@@ -5,7 +5,10 @@ import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.planner.expressions.In;
 
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -17,7 +20,15 @@ import java.util.concurrent.TimeUnit;
 public class MysqlAsync {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        DataStreamSource<String> source = env.socketTextStream("localhost", 9999);
+        //DataStreamSource<String> source = env.socketTextStream("localhost", 9999);
+
+        ArrayList<String> arrayList = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+                arrayList.add(String.valueOf(new Random().nextInt(999)));
+        }
+        DataStreamSource<String> source = env.fromCollection(arrayList);
+
+        source.print();
 
         SingleOutputStreamOperator<Tuple2<String, String>> asyncDS = AsyncDataStream.orderedWait(
                 source,
