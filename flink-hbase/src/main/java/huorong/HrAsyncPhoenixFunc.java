@@ -2,6 +2,8 @@ package huorong;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.fastjson.JSONObject;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.async.ResultFuture;
 import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
@@ -20,28 +22,30 @@ import java.util.concurrent.CompletableFuture;
  */
 public class HrAsyncPhoenixFunc extends RichAsyncFunction<SampleTaskMappingInfo, JSONObject> {
 
-    //private transient DruidDataSource dataSource; //连接池
-    private transient Connection conn;
-    private PhoenixQueryUtil2 phoenixQueryUtil;
+    private transient HikariDataSource dataSource; //连接池
+    private PhoenixQueryUtil phoenixQueryUtil;
 
     @Override
     public void open(Configuration parameters) throws Exception {
 
-        Properties prop = new Properties();
-        prop.setProperty(QueryServices.IS_NAMESPACE_MAPPING_ENABLED, "true");
-        prop.setProperty(QueryServices.AUTO_COMMIT_ATTRIB, "false");
-        prop.setProperty(QueryServices.ZOOKEEPER_QUORUM_ATTRIB, "192.168.1.118,192.168.1.119,192.168.1.120:2181");
-        prop.setProperty(QueryServices.KEEP_ALIVE_MS_ATTRIB, "600000");
         Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
-        conn = DriverManager.getConnection("jdbc:phoenix:192.168.1.118:2181", prop);
-
-        phoenixQueryUtil = new PhoenixQueryUtil2(conn);
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.addDataSourceProperty(QueryServices.IS_NAMESPACE_MAPPING_ENABLED, "true");
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:phoenix:192.168.1.118:2181");
+        config.setMaximumPoolSize(9);
+        config.setMinimumIdle(3);
+        config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
+        dataSource = new HikariDataSource(config);
+        phoenixQueryUtil = new PhoenixQueryUtil(dataSource);
     }
 
     @Override
     public void close() throws Exception {
-        if (conn != null) {
-            conn.close();
+        if (dataSource != null) {
+            dataSource.close();
         }
     }
 
@@ -75,7 +79,10 @@ public class HrAsyncPhoenixFunc extends RichAsyncFunction<SampleTaskMappingInfo,
 
     @Override
     public void timeout(SampleTaskMappingInfo input, ResultFuture<JSONObject> resultFuture) throws Exception {
-        System.out.println("超时，出错数据为====》 " + input.toString());
-        super.timeout(input, resultFuture);
+        // JSONObject jsonObject = JSONObject.parseObject(input.toString());
+        // resultFuture.complete(Collections.singletonList(jsonObject));
+        System.err.println("数据超时--> "+input);
+        // 超时重试
+        asyncInvoke(input,resultFuture);
     }
 }

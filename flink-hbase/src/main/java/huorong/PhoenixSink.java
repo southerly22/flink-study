@@ -6,80 +6,76 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.phoenix.query.QueryServices;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.lang.management.MemoryUsage;
+import java.sql.*;
+import java.util.List;
 import java.util.Properties;
 
 /**
  * @author lzx
  * @date 2023/05/29 17:28
  **/
-public class PhoenixSink extends RichSinkFunction<JSONObject> {
+public class PhoenixSink extends RichSinkFunction<List<JSONObject>> {
 
     private transient Connection conn;
-    private Long cnt = 0L;
-
     private String dataBase;
     private String tableName;
-    private Long batchSize;
 
-    public PhoenixSink(String dataBase, String tableName,Long batchSize) {
+    public PhoenixSink(String dataBase, String tableName) {
         this.dataBase = dataBase;
         this.tableName = tableName;
-        this.batchSize = batchSize;
     }
 
     @Override
     public void open(Configuration parameters) throws Exception {
         Properties prop = new Properties();
         prop.setProperty(QueryServices.IS_NAMESPACE_MAPPING_ENABLED, "true");
-        prop.setProperty(QueryServices.AUTO_COMMIT_ATTRIB, "false");
+        // prop.setProperty(QueryServices.AUTO_COMMIT_ATTRIB, "false");
         prop.setProperty(QueryServices.ZOOKEEPER_QUORUM_ATTRIB, "192.168.1.118,192.168.1.119,192.168.1.120:2181");
-        prop.setProperty(QueryServices.KEEP_ALIVE_MS_ATTRIB, "600000");
+        // prop.setProperty(QueryServices.KEEP_ALIVE_MS_ATTRIB, "600000");
         Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
         conn = DriverManager.getConnection("jdbc:phoenix:192.168.1.118:2181", prop);
+        conn.setAutoCommit(false);
     }
 
     @Override
     public void close() throws Exception {
-        if (conn!=null) {
+        if (conn != null) {
             conn.close();
         }
     }
 
     @Override
-    public void invoke(JSONObject value, Context context) throws Exception {
-
-        String upsertSql = generateUpsertSql(value);
-        conn.setAutoCommit(false);
-        PreparedStatement ps = null;
+    public void invoke(List<JSONObject> list, Context context) throws Exception {
+        Statement statement = conn.createStatement();
         try {
-            ps = conn.prepareStatement(upsertSql);
-            System.out.println(ps);
-            ps.addBatch();
-            cnt++;
-
-            if (cnt % batchSize==0){
-                ps.executeBatch();
-                conn.commit();
-                System.out.println("提交写入");
+            for (JSONObject l : list) {
+                String upsertSql = generateUpsertSql(l);
+                statement.addBatch(upsertSql);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
+            statement.executeBatch();
+            // int[] batch = statement.executeBatch();//批量后执行
+            // System.out.println("插入数据：" + batch.length);
+        }catch (Exception e){
+            System.out.println("报错了！！！");
+            System.out.println(statement);
+            System.out.println("e.getMessage() = " + e.getMessage());
+            for (JSONObject l : list) {
+                System.out.println(generateUpsertSql(l));
+            }
+        }
+        finally {
             conn.commit();
-            if (ps!=null) {
-                ps.close();
+            if (statement != null) {
+                statement.close();
             }
         }
     }
 
-    public String generateUpsertSql(JSONObject jsObj){
+    public String generateUpsertSql(JSONObject jsObj) {
 
         StringBuilder sql = new StringBuilder();
-        sql.append("upsert into "+dataBase+"."+tableName+"(");
+        sql.append("upsert into " + dataBase + "." + tableName + "(");
         sql.append("\"").append(StringUtils.join(jsObj.keySet(), "\",\"")).append("\")");
         sql.append("values( '").append(StringUtils.join(jsObj.values(), "','")).append("')");
         return sql.toString();

@@ -3,7 +3,10 @@ package huorong;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
 import com.alibaba.fastjson.JSONObject;
+import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.lang.StringEscapeUtils;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,9 +19,9 @@ import java.util.Locale;
  */
 public class PhoenixQueryUtil {
 
-    private transient DruidDataSource dataSource;
+    private transient HikariDataSource dataSource;
 
-    public PhoenixQueryUtil(DruidDataSource dataSource) {
+    public PhoenixQueryUtil(HikariDataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -26,21 +29,23 @@ public class PhoenixQueryUtil {
 
     public JSONObject queryPhoenixPad(String sha1) {
         JSONObject jSONObject = new JSONObject();
-        String sql = "SELECT * FROM OFFICIAL.SAMPLE_PAD_SCAN_LATEST WHERE \"rk\"  like ?%";
+        String sql = "SELECT * FROM OFFICIAL.SAMPLE_PAD_SCAN_LATEST WHERE \"rk\"  like ?";
 
-        DruidPooledConnection conn = null;
+        Connection conn = null;
         PreparedStatement ps = null;
         ResultSet resultSet = null;
 
         try {
             conn = dataSource.getConnection();
+            // System.out.println("获取的连接是-----------》"+conn);
             ps = conn.prepareStatement(sql);
-            ps.setString(1, sha1);
+            ps.setString(1, sha1.concat("%"));
             resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 String engine_name = resultSet.getString("engine_name") + "_";
+                jSONObject.put("rk",sha1);
                 jSONObject.put(engine_name + "id", resultSet.getString("scan_id"));
-                jSONObject.put(engine_name + "name", resultSet.getString("scan_name"));
+                jSONObject.put(engine_name + "name", StringEscapeUtils.escapeSql(resultSet.getString("scan_name")));
                 jSONObject.put(engine_name + "virus_name", resultSet.getString("virus_name"));
                 jSONObject.put(engine_name + "virus_platform", resultSet.getString("virus_platform"));
                 jSONObject.put(engine_name + "virus_tech", resultSet.getString("virus_tech"));
@@ -77,14 +82,15 @@ public class PhoenixQueryUtil {
 
     public JSONObject queryPhoenixInfo(String sha1) {
         JSONObject jSONObject = new JSONObject();
-        String sql = "SELECT * FROM OFFICIAL.SAMPLE_INFO WHERE \"rk\"  like ?%";
+        String sql = "SELECT * FROM OFFICIAL.SAMPLE_INFO WHERE \"rk\"  = ?";
 
-        DruidPooledConnection conn = null;
+        Connection conn = null;
         PreparedStatement ps = null;
         ResultSet resultSet = null;
 
         try {
             conn = dataSource.getConnection();
+            // System.out.println("获取的连接是-----------》"+conn);
             ps = conn.prepareStatement(sql);
             ps.setString(1, sha1);
             resultSet = ps.executeQuery();
@@ -97,7 +103,7 @@ public class PhoenixQueryUtil {
                 jSONObject.put("hashsig", resultSet.getString("hashsig"));
                 jSONObject.put("hashsig_pe", resultSet.getString("hashsig_pe"));
                 jSONObject.put("filetype", resultSet.getString("filetype"));
-                jSONObject.put("die", resultSet.getString("die"));
+                jSONObject.put("die", StringEscapeUtils.escapeSql(resultSet.getString("die")));
                 jSONObject.put("sha1", sha1);
                 jSONObject.put("sha256", resultSet.getString("sha256"));
                 jSONObject.put("sha512", resultSet.getString("sha512"));
@@ -134,23 +140,24 @@ public class PhoenixQueryUtil {
 
     public JSONObject queryPhoenixSrc(String sha1) {
         JSONObject jSONObject = new JSONObject();
-        String sql = "SELECT * FROM OFFICIAL.SAMPLE_SRC WHERE \"rk\"  like ?%";
+        String sql = "SELECT * FROM OFFICIAL.SAMPLE_SRC WHERE \"rk\"  like ?";
 
-        DruidPooledConnection conn = null;
+        Connection conn = null;
         PreparedStatement ps = null;
         ResultSet resultSet = null;
 
         try {
             conn = dataSource.getConnection();
+            // System.out.println("获取的连接是-----------》"+conn);
             ps = conn.prepareStatement(sql);
-            ps.setString(1, sha1);
+            ps.setString(1, sha1.concat("%"));
             resultSet = ps.executeQuery();
-            StringBuffer buffer = new StringBuffer(20);
+            StringBuffer buffer = new StringBuffer();
             while (resultSet.next()) {
-                String src_list = resultSet.getString("src_list");
+                String src_list = resultSet.getString("src_name");
                 buffer.append(src_list).append(",");
             }
-            jSONObject.put("src_list", buffer.deleteCharAt(buffer.length() - 1));
+            jSONObject.put("src_list", buffer.deleteCharAt(buffer.length() - 1).toString());
             buffer.setLength(0); //清空
         } catch (SQLException e) {
             e.printStackTrace();

@@ -133,12 +133,12 @@ public class PhoenixQueryUtil2 {
             ps = conn.prepareStatement(sql);
             ps.setString(1, sha1.concat("%"));
             resultSet = ps.executeQuery();
-            StringBuffer buffer = new StringBuffer(20);
+            StringBuffer buffer = new StringBuffer();
             while (resultSet.next()) {
                 String src_name = resultSet.getString("src_name");
                 buffer.append(src_name).append(",");
             }
-            jSONObject.put("src_list", buffer.deleteCharAt(buffer.length() - 1));
+            jSONObject.put("src_list", buffer.deleteCharAt(buffer.length() - 1).toString());
             buffer.setLength(0); //清空
         } catch (SQLException e) {
             e.printStackTrace();
