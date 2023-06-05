@@ -134,7 +134,7 @@ public class HrKafkaSource {
         SingleOutputStreamOperator<List<JSONObject>> winKeyDs = resDS.keyBy(new KeySelector<JSONObject, Integer>() {
                     @Override
                     public Integer getKey(JSONObject value) throws Exception {
-                        return value.getString("sha1").hashCode()% Runtime.getRuntime().availableProcessors();
+                        return value.getString("sha1").hashCode() % Runtime.getRuntime().availableProcessors();
                     }
                 })
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
