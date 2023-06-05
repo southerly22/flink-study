@@ -10,6 +10,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.Key;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,7 +32,7 @@ public class DimUtil {
         String dimInfo = jedis.get(redisKey);
         if (dimInfo != null) {
             // 重置过期时间
-            jedis.expire(redisKey,6 * 60 * 60);
+            jedis.expire(redisKey,1 * 60 * 60);
             //归还链接
             jedis.close();
             //返回数据
@@ -46,13 +49,52 @@ public class DimUtil {
             jedis.set(redisKey,jsonObj.toJSONString());
 
             //设置过期时间
-            jedis.expire(redisKey,6 * 60 * 60);
+            jedis.expire(redisKey,1 * 60 * 60);
 
             jedis.close();
             return jsonObj;
         }
     }
 
+    public static List<JSONObject> getDimInfoList(Connection connection, String tableName, String key) throws SQLException, InvocationTargetException, InstantiationException, IllegalAccessException {
+
+        // todo 先去redis里 获取值
+        Jedis jedis = JedisPoolUtil.getJedis();
+        // 拼接redis key
+        String redisKey = tableName + "-" + key;
+        List<String> list = jedis.lrange(redisKey, 0, -1);
+        if (list.size() > 0) {
+            // 重置过期时间
+            jedis.expire(redisKey,1 * 60 * 60);
+            //归还链接
+            jedis.close();
+            //返回数据
+            ArrayList<JSONObject> arrayList = new ArrayList<>();
+            for (String s : list) {
+                JSONObject jsonObject = JSONObject.parseObject(s);
+                arrayList.add(jsonObject);
+            }
+            return arrayList;
+        }else{ // todo 获取不到的 去Phoenix里面获取
+
+            //组合SQL语句
+            String sql = "SELECT * FROM OFFICIAL." + tableName + " WHERE \"rk\" like '" + key + "%'";
+            //查询
+            List<JSONObject> queryList = JdbcUtil.queryList(connection, sql, JSONObject.class, false);
+
+            // 将取到数据写入redis
+            for (JSONObject jsonObject : queryList) {
+                jedis.lpush(redisKey,jsonObject.toJSONString());
+            }
+
+            //设置过期时间
+            jedis.expire(redisKey,1 * 60 * 60);
+
+            jedis.close();
+            return queryList;
+        }
+    }
+    // 删除redis维度数据的缓存
     public static void delDimInfo(String tableName,String key){
         Jedis jedis = JedisPoolUtil.getJedis();
         jedis.del(tableName.concat("-").concat(key));
@@ -66,10 +108,14 @@ public class DimUtil {
         DruidPooledConnection conn = dataSource.getConnection();
         StopWatch watch = new StopWatch();
         watch.start();
-        JSONObject dimInfo = getDimInfo(conn, tableName, key);
+        // JSONObject dimInfo = getDimInfo(conn, tableName, key);
+        List<JSONObject> dimInfoList = getDimInfoList(conn, tableName, key);
         watch.stop();
         conn.close();
         System.out.println(watch.getTime());
-        System.out.println(dimInfo);
+
+        for (JSONObject jsonObject : dimInfoList) {
+            System.out.println(jsonObject);
+        }
     }
 }

@@ -53,7 +53,6 @@ public abstract class CustomAsyncCommon<T> extends RichAsyncFunction<T, T> imple
     // 异步处理
     @Override
     public void asyncInvoke(T input, ResultFuture<T> resultFuture) throws Exception {
-
         Future<T> future1 = threadPoolExecutor.submit(new Callable<T>() {
             @Override
             public T call() throws Exception {
