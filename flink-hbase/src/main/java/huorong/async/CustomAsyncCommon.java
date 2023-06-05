@@ -11,6 +11,7 @@ import org.apache.flink.streaming.api.functions.async.ResultFuture;
 import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -56,7 +57,8 @@ public abstract class CustomAsyncCommon<T> extends RichAsyncFunction<T, T> imple
         Future<T> future1 = threadPoolExecutor.submit(new Callable<T>() {
             @Override
             public T call() throws Exception {
-                JSONObject dimInfo = null;
+                //JSONObject dimInfo = null;
+                List<JSONObject> dimInfoList = null;
                 try {
                     // 获取连接
                     DruidPooledConnection conn = druidDataSource.getConnection();
@@ -65,10 +67,11 @@ public abstract class CustomAsyncCommon<T> extends RichAsyncFunction<T, T> imple
                     String key = getKey(input);
 
                     //查询维表
-                    dimInfo = DimUtil.getDimInfo(conn, tableName, key);
+                    //dimInfo = DimUtil.getDimInfo(conn, tableName, key);
+                    dimInfoList = DimUtil.getDimInfoList(conn, tableName, key);
 
                     //补充维度信息
-                    join(input, dimInfo);
+                    join(input, dimInfoList);
 
                     //归还连接
                     conn.close();

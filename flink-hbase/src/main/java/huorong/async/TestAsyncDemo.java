@@ -3,7 +3,7 @@ package huorong.async;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import huorong.entity.SampleUerdefinedScan;
+import huorong.entity.SampleUserdefinedScan;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -21,6 +21,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -64,28 +65,74 @@ public class TestAsyncDemo {
 
         DataStreamSource<String> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "kafkaSource");
 
-        SingleOutputStreamOperator<SampleUerdefinedScan> filterDS = kafkaStream
+        SingleOutputStreamOperator<SampleUserdefinedScan> filterDS = kafkaStream
                 .setParallelism(6)
-                .map(s -> JSON.parseObject(s, SampleUerdefinedScan.class))
-                .filter(sample -> "U".equals(sample.getTask_type()) && sample.getSha1() != null && !"".equals(sample.getSha1().trim()));
+                .map(s -> JSON.parseObject(s, SampleUserdefinedScan.class))
+                .filter(sample -> "U".equals(sample.getTask_type()) && sample.getSha1() != null);
 
-        // 关联维度信息
-        SingleOutputStreamOperator<SampleUerdefinedScan> asyncDS = AsyncDataStream.unorderedWait(
-                filterDS, new CustomAsyncCommon<SampleUerdefinedScan>("SAMPLE_SRC") {
+        // 关联维度信息 -- pad
+        SingleOutputStreamOperator<SampleUserdefinedScan> padAsyncDS = AsyncDataStream.unorderedWait(
+                filterDS, new CustomAsyncCommon<SampleUserdefinedScan>("SAMPLE_PAD") {
                     @Override
-                    public String getKey(SampleUerdefinedScan input) {
+                    public String getKey(SampleUserdefinedScan input) {
                         return input.getSha1();
                     }
+
                     @Override
-                    public void join(SampleUerdefinedScan input, JSONObject jsonObject) {
-                        input.setRk(jsonObject.getString("rk"));
-                        input.setSrc_id(jsonObject.getString("src_id"));
-                        input.setSrc_name(jsonObject.getString("src_name"));
-                        input.setAdd_timestamp(jsonObject.getLong("add_timestamp"));
+                    public void join(SampleUserdefinedScan input, List<JSONObject> dimInfoList) {
+                        for (JSONObject info : dimInfoList) {
+                            String engine_name = info.getString("engine_name");
+                            //input.set
+                        }
                     }
                 }, 100, TimeUnit.SECONDS
         );
-        asyncDS.print();
+
+        //关联 src
+        SingleOutputStreamOperator<SampleUserdefinedScan> srcWithPadAsyncDS = AsyncDataStream.unorderedWait(
+                padAsyncDS,
+                new CustomAsyncCommon<SampleUserdefinedScan>("SAMPLE_SRC") {
+                    @Override
+                    public String getKey(SampleUserdefinedScan input) {
+                        return input.getSha1();
+                    }
+
+                    @Override
+                    public void join(SampleUserdefinedScan input, List<JSONObject> dimInfoList) {
+                        StringBuilder stringBuilder = new StringBuilder();
+                        for (JSONObject info : dimInfoList) {
+                            stringBuilder.append(info.getString("src_name")).append(",");
+                        }
+                        String src_list = stringBuilder.deleteCharAt(stringBuilder.length() - 1).toString();
+                        input.setSrc_list(src_list);
+                    }
+                },
+                100, TimeUnit.SECONDS
+        );
+
+        //关联 info
+        SingleOutputStreamOperator<SampleUserdefinedScan> infoWithSrcWithPadAsyncDS = AsyncDataStream.unorderedWait(
+                srcWithPadAsyncDS,
+                new CustomAsyncCommon<SampleUserdefinedScan>("SAMPLE_INFO") {
+                    @Override
+                    public String getKey(SampleUserdefinedScan input) {
+                        return input.getSha1();
+                    }
+
+                    @Override
+                    public void join(SampleUserdefinedScan input, List<JSONObject> dimInfoList) {
+                        for (JSONObject info : dimInfoList) {
+                            //input.setAddtime()
+                            //info.getString("")
+                        }
+                    }
+                },
+                100, TimeUnit.SECONDS
+        );
+
+        //sink 持久化
+        //infoWithSrcWithPadAsyncDS.addSink()
+
         env.execute("ASYNC");
     }
 }
