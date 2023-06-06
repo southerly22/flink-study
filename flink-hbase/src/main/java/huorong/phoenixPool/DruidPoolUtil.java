@@ -4,6 +4,7 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
 import com.alibaba.fastjson.JSONObject;
 import com.zaxxer.hikari.HikariDataSource;
+import huorong.PhoenixQueryUtil;
 import org.apache.phoenix.query.QueryServices;
 
 import java.sql.Connection;
@@ -65,8 +66,16 @@ public class DruidPoolUtil {
     // 测试
     public static void main(String[] args) throws SQLException {
         DruidDataSource dataSource = createConn();
-        JSONObject jsonObject = queryPhoenixPad(dataSource, "000000015acd38b8f06d639438ac442493d08180");
-        System.out.println(jsonObject);
+        DruidPooledConnection conn = dataSource.getConnection();
+        // JSONObject jsonObject = queryPhoenixPad(dataSource, "000000015acd38b8f06d639438ac442493d08180");
+        // System.out.println(jsonObject);
+        // JSONObject jsonObject1 = PhoenixQueryUtil.queryPhoenix(conn, "SAMPLE_PAD_SCAN_LATEST", "000000015acd38b8f06d639438ac442493d08180");
+        // JSONObject jsonObject2 = PhoenixQueryUtil.queryPhoenix(conn, "SAMPLE_INFO", "000000015acd38b8f06d639438ac442493d08180");
+        JSONObject jsonObject3 = PhoenixQueryUtil.queryPhoenix(conn, "SAMPLE_SRC", "000000015acd38b8f06d639438ac442493d08180");
+        // System.out.println(jsonObject1);
+        // System.out.println(jsonObject2);
+        System.out.println(jsonObject3);
+        dataSource.close();
     }
 
     public static JSONObject queryPhoenixPad(DruidDataSource dataSource, String sha1) throws SQLException {

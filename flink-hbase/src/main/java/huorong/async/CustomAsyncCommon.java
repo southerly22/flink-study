@@ -54,11 +54,10 @@ public abstract class CustomAsyncCommon<T> extends RichAsyncFunction<T, T> imple
     // 异步处理
     @Override
     public void asyncInvoke(T input, ResultFuture<T> resultFuture) throws Exception {
-        Future<T> future1 = threadPoolExecutor.submit(new Callable<T>() {
+
+        threadPoolExecutor.submit(new Runnable() {
             @Override
-            public T call() throws Exception {
-                //JSONObject dimInfo = null;
-                List<JSONObject> dimInfoList = null;
+            public void run() {
                 try {
                     // 获取连接
                     DruidPooledConnection conn = druidDataSource.getConnection();
@@ -67,37 +66,49 @@ public abstract class CustomAsyncCommon<T> extends RichAsyncFunction<T, T> imple
                     String key = getKey(input);
 
                     //查询维表
-                    //dimInfo = DimUtil.getDimInfo(conn, tableName, key);
-                    dimInfoList = DimUtil.getDimInfoList(conn, tableName, key);
+                    List<JSONObject> dimInfoList = DimUtil.getDimInfoList(conn, tableName, key);
 
                     //补充维度信息
                     join(input, dimInfoList);
 
+                    resultFuture.complete(Collections.singletonList(input));
                     //归还连接
                     conn.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException("关联失败输出为：" + input + "，表为：" + tableName);
                 }
-                return input;
             }
         });
-        CompletableFuture.supplyAsync(()->{
-            try {
-                return future1.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }).thenAccept(res->{
-            resultFuture.complete(Collections.singletonList(res));
-        });
-
+        // CompletableFuture.supplyAsync(() -> {
+        //     try {
+        //         // 获取连接
+        //         DruidPooledConnection conn = druidDataSource.getConnection();
+        //
+        //         // 获取key
+        //         String key = getKey(input);
+        //
+        //         //查询维表
+        //         List<JSONObject> dimInfoList = DimUtil.getDimInfoList(conn, tableName, key);
+        //
+        //         //补充维度信息
+        //         join(input, dimInfoList);
+        //
+        //         //归还连接
+        //         conn.close();
+        //     } catch (Exception e) {
+        //         e.printStackTrace();
+        //         throw new RuntimeException("关联失败输出为：" + input + "，表为：" + tableName);
+        //     }
+        //     return input;
+        // }).thenAccept((T res) -> {
+        //     resultFuture.complete(Collections.singletonList(res));
+        // });
     }
 
     @Override
     public void timeout(T input, ResultFuture<T> resultFuture) throws Exception {
-        System.out.println("失败重试--> " + input);
-        asyncInvoke(input,resultFuture);
+        // System.out.println("失败重试--> " + input.toString());
+        asyncInvoke(input, resultFuture);
     }
 }

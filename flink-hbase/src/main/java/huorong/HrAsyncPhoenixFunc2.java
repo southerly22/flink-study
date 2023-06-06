@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
  * @date 2023/5/26 15:34
  * @description: TODO 异步读取Phoenix
  */
-public class HrAsyncPhoenixFunc extends RichAsyncFunction<SampleTaskMappingInfo, JSONObject> {
+public class HrAsyncPhoenixFunc2 extends RichAsyncFunction<SampleTaskMappingInfo, JSONObject> {
     private transient HikariDataSource dataSource; //连接池
 
     @Override
@@ -36,31 +36,55 @@ public class HrAsyncPhoenixFunc extends RichAsyncFunction<SampleTaskMappingInfo,
     public void asyncInvoke(SampleTaskMappingInfo input, ResultFuture<JSONObject> resultFuture) throws Exception {
         CompletableFuture<JSONObject> padTask = CompletableFuture.supplyAsync(() -> {
             JSONObject jsonObject = null;
+            Connection conn = null;
             try {
-                Connection conn = dataSource.getConnection();
-                jsonObject = PhoenixQueryUtil.queryPhoenix(conn, "SAMPLE_PAD_SCAN_LATEST", input.getSha1());
-            } catch (SQLException e) {
+                conn = dataSource.getConnection();
+                jsonObject = PhoenixQueryUtil2.queryPhoenixPad(conn,input.getSha1());
+            }catch (SQLException e){
                 e.printStackTrace();
+            }finally {
+                try {
+                    assert conn != null;
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
             return jsonObject;
         });
         CompletableFuture<JSONObject> infoTask = CompletableFuture.supplyAsync(() -> {
             JSONObject jsonObject = null;
+            Connection conn = null;
             try {
-                Connection conn = dataSource.getConnection();
-                jsonObject = PhoenixQueryUtil.queryPhoenix(conn, "SAMPLE_INFO", input.getSha1());
-            } catch (SQLException e) {
+                conn = dataSource.getConnection();
+                jsonObject = PhoenixQueryUtil2.queryPhoenixInfo(conn,input.getSha1());
+            }catch (SQLException e){
                 e.printStackTrace();
+            }finally {
+                try {
+                    assert conn != null;
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
             return jsonObject;
         });
         CompletableFuture<JSONObject> srcTask = CompletableFuture.supplyAsync(() -> {
             JSONObject jsonObject = null;
+            Connection conn = null;
             try {
-                Connection conn = dataSource.getConnection();
-                jsonObject = PhoenixQueryUtil.queryPhoenix(conn, "SAMPLE_SRC", input.getSha1());
-            } catch (SQLException e) {
+                conn = dataSource.getConnection();
+                jsonObject = PhoenixQueryUtil2.queryPhoenixSrc(conn,input.getSha1());
+            }catch (SQLException e){
                 e.printStackTrace();
+            }finally {
+                try {
+                    assert conn != null;
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
             return jsonObject;
         });
@@ -82,8 +106,6 @@ public class HrAsyncPhoenixFunc extends RichAsyncFunction<SampleTaskMappingInfo,
 
     @Override
     public void timeout(SampleTaskMappingInfo input, ResultFuture<JSONObject> resultFuture) throws Exception {
-        // JSONObject jsonObject = JSONObject.parseObject(input.toString());
-        // resultFuture.complete(Collections.singletonList(jsonObject));
         System.err.println("数据超时--> "+input);
         // 超时重试
         asyncInvoke(input,resultFuture);

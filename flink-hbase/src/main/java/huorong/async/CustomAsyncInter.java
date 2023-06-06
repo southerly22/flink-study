@@ -2,6 +2,7 @@ package huorong.async;
 
 import com.alibaba.fastjson.JSONObject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 public interface CustomAsyncInter<T> {
@@ -9,5 +10,5 @@ public interface CustomAsyncInter<T> {
     String getKey(T input);
     // 补充 维度信息
     // void join(T input, JSONObject jsonObject);
-    void join(T input, List<JSONObject> dimInfoList);
+    void join(T input, List<JSONObject> dimInfoList) throws InvocationTargetException, IllegalAccessException;
 }

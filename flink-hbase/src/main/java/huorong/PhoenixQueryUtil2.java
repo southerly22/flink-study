@@ -16,15 +16,7 @@ import java.sql.SQLException;
  */
 public class PhoenixQueryUtil2 {
 
-    private transient Connection conn;
-
-    public PhoenixQueryUtil2(Connection conn) {
-        this.conn = conn;
-    }
-
-    // val src_selectSql: String = "SELECT \"src_name\" FROM " + hbaseSchema + ".SAMPLE_SRC WHERE \"rk\"  like ?"
-
-    public JSONObject queryPhoenixPad(String sha1) {
+    public static JSONObject queryPhoenixPad(Connection conn, String sha1) throws SQLException {
         JSONObject jSONObject = new JSONObject();
         String sql = "SELECT * FROM OFFICIAL.SAMPLE_PAD_SCAN_LATEST WHERE \"rk\"  like ?";
 
@@ -33,13 +25,12 @@ public class PhoenixQueryUtil2 {
         ResultSet resultSet = null;
 
         try {
-            //conn = dataSource.getConnection();
             ps = conn.prepareStatement(sql);
             ps.setString(1, sha1.concat("%"));
             resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 String engine_name = resultSet.getString("engine_name") + "_";
-                jSONObject.put("rk",sha1);
+                jSONObject.put("rk", sha1);
                 jSONObject.put(engine_name + "id", resultSet.getString("scan_id"));
                 jSONObject.put(engine_name + "name", resultSet.getString("scan_name"));
                 jSONObject.put(engine_name + "virus_name", resultSet.getString("virus_name"));
@@ -52,34 +43,23 @@ public class PhoenixQueryUtil2 {
             e.printStackTrace();
         } finally {
             if (resultSet != null) {
-                try {
-                    resultSet.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                resultSet.close();
             }
             if (ps != null) {
-                try {
-                    ps.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                ps.close();
             }
-
         }
         return jSONObject;
     }
 
-    public JSONObject queryPhoenixInfo(String sha1) {
+    public static JSONObject queryPhoenixInfo(Connection conn, String sha1) throws SQLException {
         JSONObject jSONObject = new JSONObject();
         String sql = "SELECT * FROM OFFICIAL.SAMPLE_INFO WHERE \"rk\"  like ?";
 
-        //DruidPooledConnection conn = null;
         PreparedStatement ps = null;
         ResultSet resultSet = null;
 
         try {
-            //conn = dataSource.getConnection();
             ps = conn.prepareStatement(sql);
             ps.setString(1, sha1.concat("%"));
             resultSet = ps.executeQuery();
@@ -103,33 +83,22 @@ public class PhoenixQueryUtil2 {
             e.printStackTrace();
         } finally {
             if (resultSet != null) {
-                try {
-                    resultSet.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                resultSet.close();
             }
             if (ps != null) {
-                try {
-                    ps.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                ps.close();
             }
         }
         return jSONObject;
     }
 
-    public JSONObject queryPhoenixSrc(String sha1) {
+    public static JSONObject queryPhoenixSrc(Connection conn, String sha1) throws SQLException {
         JSONObject jSONObject = new JSONObject();
         String sql = "SELECT * FROM OFFICIAL.SAMPLE_SRC WHERE \"rk\"  like ?";
-
-        //DruidPooledConnection conn = null;
         PreparedStatement ps = null;
         ResultSet resultSet = null;
 
         try {
-            //conn = dataSource.getConnection();
             ps = conn.prepareStatement(sql);
             ps.setString(1, sha1.concat("%"));
             resultSet = ps.executeQuery();
@@ -144,18 +113,10 @@ public class PhoenixQueryUtil2 {
             e.printStackTrace();
         } finally {
             if (resultSet != null) {
-                try {
-                    resultSet.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                resultSet.close();
             }
             if (ps != null) {
-                try {
-                    ps.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                ps.close();
             }
         }
         return jSONObject;

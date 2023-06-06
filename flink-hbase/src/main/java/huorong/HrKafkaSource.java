@@ -114,8 +114,8 @@ public class HrKafkaSource {
 
         SingleOutputStreamOperator<JSONObject> resDS = AsyncDataStream.unorderedWait(
                 filterDS,
-                new HrAsyncPhoenixFunc(),
-                60,
+                new HrAsyncPhoenixFunc2(),
+                100,
                 TimeUnit.SECONDS
         ).startNewChain();
         // countWindowAll 只有一个并行度
