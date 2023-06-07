@@ -15,8 +15,9 @@
         <module>java_lzx</module>
         <module>kafka-sort</module>
         <module>Phoenix_Server</module>
-        <module>flink-sql</module>
+<!--        <module>flink-sql</module>-->
         <module>flink-hbase</module>
+        <module>flink-sgg</module>
     </modules>
 
     <properties>
