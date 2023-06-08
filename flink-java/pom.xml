@@ -134,6 +134,19 @@
             <version>${flink.version}</version>
         </dependency>
 
+        <!-- Phoenix -->
+        <dependency>
+            <groupId>org.apache.phoenix</groupId>
+            <artifactId>phoenix-core</artifactId>
+            <version>5.1.2</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>libthrift</artifactId>
+                    <groupId>org.apache.thrift</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- 引入日志管理相关依赖-->
         <dependency>
             <groupId>org.slf4j</groupId>
