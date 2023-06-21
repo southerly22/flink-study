@@ -13,7 +13,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * phoenix连接池
+ * phoenix连接池 自定义的 测试 不准
  *
  * @author lzx
  * @date 2023/05/29 15:14

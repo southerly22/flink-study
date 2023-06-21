@@ -127,6 +127,11 @@
             <artifactId>javax.el</artifactId>
             <version>3.0.1-b06</version>
         </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.28</version>
+        </dependency>
 
 
         <!-- 引入日志管理相关依赖-->

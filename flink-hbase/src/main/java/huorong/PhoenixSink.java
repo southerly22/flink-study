@@ -30,12 +30,10 @@ public class PhoenixSink extends RichSinkFunction<List<JSONObject>> {
     public void open(Configuration parameters) throws Exception {
         Properties prop = new Properties();
         prop.setProperty(QueryServices.IS_NAMESPACE_MAPPING_ENABLED, "true");
-        // prop.setProperty(QueryServices.AUTO_COMMIT_ATTRIB, "false");
         prop.setProperty(QueryServices.ZOOKEEPER_QUORUM_ATTRIB, "192.168.1.118,192.168.1.119,192.168.1.120:2181");
-        // prop.setProperty(QueryServices.KEEP_ALIVE_MS_ATTRIB, "600000");
         Class.forName("org.apache.phoenix.jdbc.PhoenixDriver");
         conn = DriverManager.getConnection("jdbc:phoenix:192.168.1.118:2181", prop);
-        conn.setAutoCommit(false);
+
     }
 
     @Override
@@ -54,6 +52,7 @@ public class PhoenixSink extends RichSinkFunction<List<JSONObject>> {
                 statement.addBatch(upsertSql);
             }
             statement.executeBatch();
+            conn.commit();
             // int[] batch = statement.executeBatch();//批量后执行
             // System.out.println("插入数据：" + batch.length);
         }catch (Exception e){
