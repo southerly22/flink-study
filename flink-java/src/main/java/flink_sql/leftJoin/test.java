@@ -1,4 +1,4 @@
-package flink_sql.test;
+package flink_sql.leftJoin;
 
 import java.nio.charset.StandardCharsets;
 

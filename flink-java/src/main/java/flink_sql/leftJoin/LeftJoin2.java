@@ -1,7 +1,5 @@
-package flink_sql.test;
+package flink_sql.leftJoin;
 
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -84,7 +82,6 @@ public class LeftJoin2 {
         //     }
         // });
 
-
         DataStream<Row> resDS2 = tEnv.toChangelogStream(
                 tEnv.sqlQuery(
                         "  SELECT  \n" +
@@ -109,7 +106,12 @@ public class LeftJoin2 {
                 if (value.getKind().toByteValue() == 0){
                     // update
                     System.out.println("update-->" + value);
-                }else {
+                }else if(value.getKind().toByteValue() == 2){
+
+                    //update_after
+                    System.out.println("update_after-->" + value);
+                }
+                else {
                     // delete
                     System.out.println("delete-->" + value);
                 }

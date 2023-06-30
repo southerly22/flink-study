@@ -1,26 +1,15 @@
-package flink_sql.test;
+package flink_sql.leftJoin;
 
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.Schema;
-import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-import org.apache.flink.table.data.StringData;
-import org.apache.flink.types.Row;
 
 /**
  * @author lzx
- * @date 2023/6/29 14:48
- * @description: TODO
+ * @date 2023/6/29 13:21
+ * @description: TODO left join回撤流
  */
-public class LeftJoin1 {
+public class LeftJoin_Mysql {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
@@ -55,31 +44,33 @@ public class LeftJoin1 {
                         "  )  "
         );
 
-        // 输出到 kafka
+        // 创建 jdbc表
         tEnv.executeSql(
-                "  CREATE TABLE sink_table (  \n" +
-                        "      id BIGINT,  \n" +
-                        "      s_params STRING,  \n" +
-                        "      c_params STRING,  \n" +
-                        "      PRIMARY KEY(id) NOT ENFORCED \n" + // 回撤流要有主键
-                        "    ) WITH( \n" +
-                        "        'connector' = 'upsert-kafka',\n" + //left join有回撤流，只可以使用upsert-kafka，同时还要指定key的format
-                        "        'topic'='test0629',\n" +
-                        "        'properties.bootstrap.servers'='192.168.1.56:9092,192.168.1.61:9092,192.168.1.58:9092,192.168.3.71:9092,192.168.3.178:9092',\n" +
-                        "        'key.format' = 'json',\n" +
-                        "        'value.format' = 'json'\n" +
-                        "    )"
+                " CREATE TABLE sink_table (  \n"+
+                        "   s_id bigint,  \n"+
+                        "   s_params STRING,  \n"+
+                        "   a_params STRING,  \n"+
+                        "   PRIMARY KEY (s_id) NOT ENFORCED  \n"+
+                        " ) WITH (  \n"+
+                        "    'connector' = 'jdbc',  \n"+
+                        "    'url' = 'jdbc:mysql://localhost:3306/test',  \n"+
+                        "    'password' = '123456',  \n"+
+                        "    'username' = 'root',  \n"+
+                        "    'table-name' = 'sink_table'  \n"+
+                        " ) "
         );
 
-        // 往kafka写数据
+        // 执行插入操作
         tEnv.executeSql(
-                "  INSERT INTO sink_table  \n"+
-                        "  SELECT  \n"+
-                        "      show_log_table.log_id as id,  \n"+
-                        "      show_log_table.show_params as s_params,  \n"+
-                        "      click_log_table.click_params as c_params  \n"+
-                        "  FROM show_log_table  \n"+
+                "INSERT INTO sink_table \n " +
+                "  SELECT  \n" +
+                        "      show_log_table.log_id as s_id,  \n" +
+                        "      show_log_table.show_params as s_params,  \n" +
+                        "      click_log_table.click_params as c_params  \n" +
+                        "  FROM show_log_table  \n" +
                         "  LEFT JOIN click_log_table ON show_log_table.log_id = click_log_table.log_id "
         );
+
+
     }
 }
