@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 public class MyAsyncMysqlFunc extends RichAsyncFunction<String, Tuple2<String, String>> {
     private transient DruidDataSource druidDataSource;
     private transient ExecutorService executorService;
-    private int maxConnTotal; //最大连接数
+    private final int maxConnTotal; //最大连接数
 
     public MyAsyncMysqlFunc(int maxConnTotal) {
         this.maxConnTotal = maxConnTotal;

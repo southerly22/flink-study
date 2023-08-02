@@ -18,6 +18,7 @@
         <module>flink-hbase</module>
         <module>flink-sgg</module>
         <module>flink-doris</module>
+        <module>myTest</module>
     </modules>
 
     <properties>

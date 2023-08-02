@@ -1,5 +1,6 @@
 package flink_core.checkpoint;
 
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
@@ -15,12 +16,16 @@ import java.time.Duration;
  **/
 public class Ck_Configration_Demo {
     public static void main(String[] args) {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        Configuration configuration = new Configuration();
+
+        // 设置从检查点(ck) 恢复数据
+        configuration.setString("execution.savepoint.path", "D:\\WorkPlace\\flink-study\\flink-java\\ck\\82c266361f12ff1ced5ffb222d93de96\\chk-61");
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(configuration);
 
         // CheckpointingMode.AT_LEAST_ONCE barrier不对齐  CheckpointingMode.EXACTLY_ONCE barrier对齐
         env.enableCheckpointing(3000, CheckpointingMode.EXACTLY_ONCE); //传入两个参数 1，ck生成间隔 2，ck模式
-
         CheckpointConfig checkpointConfig = env.getCheckpointConfig();
+
         checkpointConfig.setCheckpointStorage("file:///D:/checkpoint/"); // 存在本地
         checkpointConfig.setCheckpointStorage(new Path("hdfs://doit01:8020/ckpt")); // 存储到远程hdfs系统上
 
@@ -34,6 +39,10 @@ public class Ck_Configration_Demo {
         checkpointConfig.setMinPauseBetweenCheckpoints(2000); // 设置两次ck之间的最小时间间隔，用于防止ck过多占用算子处理时间
         checkpointConfig.setCheckpointTimeout(3000); // 一个算子在一次checkpoint 执行过程中的总耗费时长超时上限
         checkpointConfig.setTolerableCheckpointFailureNumber(10); //容忍 ck 失败最大次数
+
+        // CheckpointConfig.ExternalizedCheckpointCleanup.DELETE_ON_CANCELLATION:当外部作用被取消时，删除外部 checkpoint（默认值）
+        // CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION:当外部作用被取消时，保留外部 checkpoint
+        env.getCheckpointConfig().setExternalizedCheckpointCleanup(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
     }
 }

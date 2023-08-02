@@ -1,7 +1,7 @@
 package flink_core.sink;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.flink.api.common.functions.CoGroupFunction;
+import org.apache.flink.api.common.functions.Function;
 import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -74,6 +74,6 @@ public class InnerJoinpStream {
                 });
 
         resDS.print();
-        env.execute("CoGroupStream");
+        env.execute("Stream");
     }
 }
