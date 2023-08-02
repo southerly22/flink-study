@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/03/23 19:37
  **/
 public class ThreadPoolTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         ThreadPoolExecutor executor = new ThreadPoolExecutor(
                 2,
                 4,
@@ -23,5 +23,7 @@ public class ThreadPoolTest {
         executor.execute(()->{
             System.out.println("hello");
         });
+
+        TimeUnit.SECONDS.sleep(100);
     }
 }

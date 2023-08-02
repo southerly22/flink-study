@@ -44,6 +44,7 @@ public class CompletableFuture_Methods4 {
         // 合并两个结果
         palyA.thenCombine(palyB,(a,b)->{
             return a.concat("---").concat(b);
+
         }).join();
 
         Thread.sleep(2000);
