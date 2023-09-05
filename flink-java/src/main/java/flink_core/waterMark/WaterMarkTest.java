@@ -2,12 +2,18 @@ package flink_core.waterMark;
 
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
+import scala.Tuple2;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 水位线测试
@@ -32,6 +38,7 @@ public class WaterMarkTest {
         // 构造流
         DataStreamSource<String> stream1 = env.socketTextStream("localhost", 8888);
         SingleOutputStreamOperator<String> s1 = stream1.assignTimestampsAndWatermarks(stringWatermarkStrategy);
+
 
         DataStreamSource<String> stream2 = env.socketTextStream("localhost", 9999);
         SingleOutputStreamOperator<String> s2 = stream2.assignTimestampsAndWatermarks(stringWatermarkStrategy);

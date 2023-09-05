@@ -37,6 +37,7 @@ public class ProcessFunctions_Demo {
          * 在普通流上调用process 算子，传入的是 ProcessFunction
          */
 
+
         SingleOutputStreamOperator<Tuple2<String, Object>> s1 = streamSource.process(new ProcessFunction<EventLog, Tuple2<String, Object>>() {
 
             // 可以使用生命周期 open 方法
