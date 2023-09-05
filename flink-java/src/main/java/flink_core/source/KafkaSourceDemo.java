@@ -6,11 +6,19 @@ import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.kafka.common.TopicPartition;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class KafkaSourceDemo {
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        TopicPartition topicPartition = new TopicPartition("lzx_test", 12);
+        HashSet<TopicPartition> hashSet = new HashSet<>();
+        hashSet.add(topicPartition);
 
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
                 .setBootstrapServers("localhost:9094,localhost:9092,localhost:9093")
@@ -29,7 +37,7 @@ public class KafkaSourceDemo {
                 // 就算开启此机制，kafkaSource依然不依赖自定提交机制
                 // （宕机时 重启时优先从flink的状态算子里面去获取offset《更可靠》）
                 .setProperty("auto.offset.commit", "false")
-
+                .setPartitions(hashSet) //指定kafka Topic的分区
                 // 把source设置为有界流，此时用该source读取数据时，读到指定的位置，程序就会退出执行
                 // 场景：补全数据，重跑某段数据
                 //.setBounded(OffsetsInitializer.offsets(Map< TopicPartition,Long >))
