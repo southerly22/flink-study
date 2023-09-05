@@ -1,5 +1,6 @@
 package flink_sql.test;
 
+import com.alibaba.fastjson.JSON;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
@@ -12,6 +13,7 @@ import org.apache.flink.formats.json.JsonRowDataDeserializationSchema;
 import org.apache.flink.formats.json.JsonRowDeserializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema;
 import org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema;
 
 import java.io.IOException;
@@ -32,7 +34,6 @@ public class KafkaDataStream {
                 .setGroupId("gid0629")
                 .setStartingOffsets(OffsetsInitializer.earliest())
                 .setValueOnlyDeserializer(new MySimpleStringSchema())
-                .setDeserializer()
                 .setProperty("auto.offset.commit", "false")
                 .build();
         DataStreamSource<String> kfkDs = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "kfk");
@@ -65,44 +66,6 @@ public class KafkaDataStream {
         @Override
         public TypeInformation<String> getProducedType() {
             return BasicTypeInfo.STRING_TYPE_INFO;
-        }
-    }
-
-    static class MyKafkaDeserialization implements KafkaDeserializationSchema<Jason> {
-        private static final Logger log = Logger.getLogger(MyKafkaDeserialization.class);
-        private final String encoding = "UTF8";
-        private boolean includeTopic;
-        private boolean includeTimestamp;
-
-        public MyKafkaDeserialization(boolean includeTopic, boolean includeTimestamp) {
-            this.includeTopic = includeTopic;
-            this.includeTimestamp = includeTimestamp;
-        }
-
-        @Override
-        public TypeInformation<Jason> getProducedType() {
-            return TypeInformation.of(Jason.class);
-        }
-
-        @Override
-        public boolean isEndOfStream(Jason nextElement) {
-            return false;
-        }
-
-        @Override
-        public Jason deserialize(ConsumerRecord<byte[], byte[]> consumerRecord) throws Exception {
-            if (consumerRecord != null) {
-                try {
-                    String value = new String(consumerRecord.value(), encoding);
-                    Jason jason = JSON.parseObject(value, Jason.class);
-                    if (includeTopic) jason.setTopic(consumerRecord.topic());
-                    if (includeTimestamp) jason.setTimestamp(consumerRecord.timestamp());
-                    return jason;
-                } catch (Exception e) {
-                    log.error("deserialize failed : " + e.getMessage());
-                }
-            }
-            return null;
         }
     }
 }
