@@ -60,7 +60,7 @@ public class Lateness {
                 .reduce(new RichReduceFunction<Tuple2<String, Long>>() {
                     @Override
                     public void open(Configuration parameters) throws Exception {
-                        getRuntimeContext().getTaskNameWithSubtasks()
+                        getRuntimeContext().getTaskNameWithSubtasks();
                     }
 
                     @Override

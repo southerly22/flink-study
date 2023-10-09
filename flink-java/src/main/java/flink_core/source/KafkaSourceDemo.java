@@ -6,9 +6,11 @@ import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 public class KafkaSourceDemo {
@@ -20,6 +22,11 @@ public class KafkaSourceDemo {
         HashSet<TopicPartition> hashSet = new HashSet<>();
         hashSet.add(topicPartition);
 
+        FlinkKafkaConsumer<String> kafkaConsumer = new FlinkKafkaConsumer<>("", new SimpleStringSchema(), new Properties());
+
+        kafkaConsumer.setStartFromGroupOffsets();
+        kafkaConsumer.setCommitOffsetsOnCheckpoints(true);
+
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
                 .setBootstrapServers("localhost:9094,localhost:9092,localhost:9093")
                 .setTopics("lzx_test")
@@ -28,6 +35,7 @@ public class KafkaSourceDemo {
                 //OffsetsInitializer.latest()  最新的
                 //OffsetsInitializer.earliest() //最早的
                 //OffsetsInitializer.offsets(Map< TopicPartition,Long >) 自定位置
+                .setStartingOffsets(OffsetsInitializer.committedOffsets()) //消费起始位置从committed_offsets(kafka记录偏移量的topic) 里面获取
                 .setStartingOffsets(OffsetsInitializer.earliest())
                 //value 的反序列化器
                 .setValueOnlyDeserializer(new SimpleStringSchema())
@@ -49,6 +57,8 @@ public class KafkaSourceDemo {
 
         //env.addSource(); // 接收的是SourceFunction 接口的实现类
         //env.fromSource(); // 接收的是Source 接口的实现类
+
+
 
         DataStreamSource<String> kfkDs = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "kfk");
         kfkDs.print();
