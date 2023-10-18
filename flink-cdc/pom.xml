@@ -106,6 +106,14 @@
             <artifactId>org.apache.commons.io</artifactId>
             <version>2.4</version>
         </dependency>
+
+        <!-- ali druid数据库连接池 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.1.20</version>
+        </dependency>
+
         <!-- 引入日志管理相关依赖-->
         <dependency>
             <groupId>org.slf4j</groupId>

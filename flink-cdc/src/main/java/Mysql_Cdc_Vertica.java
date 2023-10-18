@@ -3,34 +3,27 @@ import com.alibaba.fastjson.JSONObject;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
-import com.ververica.cdc.debezium.StringDebeziumDeserializationSchema;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.JdbcSink;
-import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
-import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import utils.CustomStringDebeziumDeserializationSchema;
+import org.apache.flink.streaming.api.functions.windowing.RichWindowFunction;
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
+import org.apache.flink.util.Collector;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.Properties;
+import java.util.Random;
 
 /**
  * @author lzx
  * @date 2023/7/14 13:19
  * @description: TODO
  */
-public class Mysql_Cdc_Doris {
+public class Mysql_Cdc_Vertica {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         conf.setInteger("rest.port",8085);
@@ -66,8 +59,6 @@ public class Mysql_Cdc_Doris {
                 .map(JSON::parseObject);
         // {"name":"测试flink CDC","id":1212}
 
-        mysqlDs.addSink()
-
         mysqlDs.map(
                 jsonObj -> {
                     String op = jsonObj.getString("op");
@@ -81,31 +72,16 @@ public class Mysql_Cdc_Doris {
                     return "";
                 });
 
-        // todo 构建普通 sink
-        SinkFunction<EventLog> commonSink = JdbcSink.sink(
-                "insert into EventLog values (?,?,?,?,?);",
-                new JdbcStatementBuilder<EventLog>() {
-                    @Override
-                    public void accept(PreparedStatement ps, EventLog e) throws SQLException {
-                        ps.setLong(1, e.getGuid());
-                        ps.setString(2, e.getSessionId());
-                        ps.setString(3, e.getEventId());
-                        ps.setTimestamp(4, new Timestamp(e.getTimeStamp()));
-                        ps.setString(5, e.getEventInfo().toString());
-                        System.out.println(ps);
-                    }
-                },
-                JdbcExecutionOptions.builder()
-                        .withBatchSize(10)
-                        .withMaxRetries(0)
-                        .build(),
-                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                        .withUrl("jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=UTF-8")
-                        .withDriverName("com.mysql.cj.jdbc.Driver")
-                        .withUsername("root")
-                        .withPassword("123456")
-                        .build()
-        );
+        mysqlDs.keyBy(s->{
+            return new Random().nextInt(Runtime.getRuntime().availableProcessors());
+        }).window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+                        .apply(new RichWindowFunction<JSONObject, Object, Integer, TimeWindow>() {
+                            @Override
+                            public void apply(Integer integer, TimeWindow window, Iterable<JSONObject> input, Collector<Object> out) throws Exception {
+
+                            }
+                        });
+
         env.execute();
     }
 }

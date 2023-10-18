@@ -1,36 +1,34 @@
-package com.jiahe.utils;
-import com.jiahe.entity.JiaHe;
-
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
+
 public class MyJdbcUtil {
-    public static void main(String[] args) throws Exception {
-        String user = "root";
-        String password = "123456";
-        String driver = "com.mysql.cj.jdbc.Driver";
-        String url = "jdbc:mysql://localhost:3306/lzxtest?useServerPrepStmts=true&rewriteBatchedStatements=true";
-
-
-        Class.forName(driver);
-        Connection connection = DriverManager.getConnection(url, user, password);
-
-
-        List<JiaHe> jiaHeList = createVo();
-        insertTable(jiaHeList, "lzx_test_0914", connection);
-//        query(JiaHe.class, "",connection,"select * from t_customer where id = ?", 1);
-    }
-
-    // 测试数据
-    public static List<JiaHe> createVo() {
-        ArrayList<JiaHe> list = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            JiaHe jiaHe = new JiaHe(new Random().nextLong()+"","xing_tu" + i, "type" + i);
-            list.add(jiaHe);
-        }
-        return list;
-    }
+//    public static void main(String[] args) throws Exception {
+//        String user = "root";
+//        String password = "123456";
+//        String driver = "com.mysql.cj.jdbc.Driver";
+//        String url = "jdbc:mysql://localhost:3306/lzxtest?useServerPrepStmts=true&rewriteBatchedStatements=true";
+//
+//
+//        Class.forName(driver);
+//        Connection connection = DriverManager.getConnection(url, user, password);
+//
+//
+//        List<JiaHe> jiaHeList = createVo();
+//        insertTable(jiaHeList, "lzx_test_0914", connection);
+////        query(JiaHe.class, "",connection,"select * from t_customer where id = ?", 1);
+//    }
+//
+//    // 测试数据
+//    public static List<JiaHe> createVo() {
+//        ArrayList<JiaHe> list = new ArrayList<>();
+//        for (int i = 0; i < 100; i++) {
+//            JiaHe jiaHe = new JiaHe(new Random().nextLong()+"","xing_tu" + i, "type" + i);
+//            list.add(jiaHe);
+//        }
+//        return list;
+//    }
 
     // 反射 insert into
     public static <T> void insertTable(List<T> objects, String tableName, Connection conn) {
