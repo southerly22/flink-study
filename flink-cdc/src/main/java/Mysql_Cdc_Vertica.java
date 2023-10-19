@@ -3,6 +3,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
+import entity.CdcDemo;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -15,6 +16,8 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
@@ -28,7 +31,7 @@ public class Mysql_Cdc_Vertica {
         Configuration conf = new Configuration();
         conf.setInteger("rest.port",8085);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
-        env.setParallelism(1);
+        env.setParallelism(3);
 
         env.enableCheckpointing(3000, CheckpointingMode.EXACTLY_ONCE);
         env.getCheckpointConfig().setCheckpointStorage("file:///D:\\CodePlace_JH\\flink-study\\flink-cdc\\src\\ck");
@@ -57,30 +60,44 @@ public class Mysql_Cdc_Vertica {
 
         SingleOutputStreamOperator<JSONObject> mysqlDs = env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "mysql-Cdc")
                 .map(JSON::parseObject);
-        // {"name":"测试flink CDC","id":1212}
+        mysqlDs.print();
 
-        mysqlDs.map(
-                jsonObj -> {
-                    String op = jsonObj.getString("op");
-                    if ("c".equals(op)) { //插入
-                        jsonObj.get("after");
-                    } else if ("u".equals(op)) { //更新
-//                jsonObj.getString("before")+","+jsonObj.getString("after");
-                    } else if ("d".equals(op)) { //删除
-                        jsonObj.getString("before");
-                    }
-                    return "";
-                });
-
-        mysqlDs.keyBy(s->{
-            return new Random().nextInt(Runtime.getRuntime().availableProcessors());
-        }).window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
-                        .apply(new RichWindowFunction<JSONObject, Object, Integer, TimeWindow>() {
-                            @Override
-                            public void apply(Integer integer, TimeWindow window, Iterable<JSONObject> input, Collector<Object> out) throws Exception {
-
-                            }
-                        });
+//        mysqlDs.map(
+//                jsonObj -> {
+//                    String op = jsonObj.getString("op");
+//                    if ("c".equals(op)) { //插入
+//                        jsonObj.get("after");
+//                    } else if ("u".equals(op)) { //更新
+////                jsonObj.getString("before")+","+jsonObj.getString("after");
+//                    } else if ("d".equals(op)) { //删除
+//                        jsonObj.getString("before");
+//                    }
+//                    return "";
+//                });
+//        SingleOutputStreamOperator<CdcDemo> cdcDemoDs = mysqlDs.filter(jsonObj -> {
+//                    return "c".equals(jsonObj.getString("op"));
+//                })
+//                .map(jsonObj -> {
+//                    String after = jsonObj.getString("after");
+//                    return JSON.parseObject(after, CdcDemo.class);
+//                });
+//
+//        SingleOutputStreamOperator<List<CdcDemo>> cdcListDs = cdcDemoDs.keyBy(s -> {
+//                    return new Random().nextInt(3);
+//                }).window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+//                .apply(new RichWindowFunction<CdcDemo, List<CdcDemo>, Integer, TimeWindow>() {
+//                    @Override
+//                    public void apply(Integer integer, TimeWindow window, Iterable<CdcDemo> input, Collector<List<CdcDemo>> out) throws Exception {
+//                        ArrayList<CdcDemo> arrayList = new ArrayList<>();
+//                        for (CdcDemo cdcDemo : input) {
+//                            arrayList.add(cdcDemo);
+//                        }
+//                        arrayList.stream().forEach(c-> System.out.println(c.toString()));
+//                        out.collect(arrayList);
+//                    }
+//                });
+//
+//        cdcListDs.addSink(new VerticaSink("lzxtest","test_cdc_output"));
 
         env.execute();
     }

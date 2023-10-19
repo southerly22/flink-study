@@ -12,12 +12,8 @@ import java.util.Properties;
  **/
 public class DruidPoolUtil {
     private static DruidDataSource druidDataSource =  null;
-    private final String DRIVER_NAME = "com.aliyun.odps.jdbc.OdpsDriver";
-    private final String JDBC_URL = "jdbc:odps:http://service.cn.maxcompute.aliyun.com/api?project=ali_pai_dev&useProjectTimeZone=true";
-
 
     public static DruidDataSource getDruidDataSource(String sourceName){
-
         String propFile = "";
         InputStream stream = null;
 
@@ -30,7 +26,7 @@ public class DruidPoolUtil {
         if (propFile.isEmpty()) {
             throw new IllegalArgumentException("propFile为空");
         }else {
-            stream = DruidPoolUtil.class.getResourceAsStream("vertica.properties");
+            stream = DruidPoolUtil.class.getClassLoader().getResourceAsStream(propFile);
         }
 
         Properties prop = new Properties();
@@ -39,22 +35,22 @@ public class DruidPoolUtil {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        prop.getProperty("DRIVER_NAME");
-        prop.getProperty("JDBC_URL");
-        prop.getProperty("USER_NAME");
-        prop.getProperty("PASS_WORD");
 
+        String driver_name = prop.getProperty("DRIVER_NAME");
+        String jdbc_url = prop.getProperty("JDBC_URL");
+        String user_name = prop.getProperty("USER_NAME");
+        String password = prop.getProperty("PASSWORD");
 
-        // mysql local;
-        //    druidDataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        //    druidDataSource.setUsername("root");
-        //    druidDataSource.setPassword("123456");
-        //    druidDataSource.setUrl("jdbc:mysql://localhost:3306/lzxtest?characterEncoding=UTF-8");
+        druidDataSource = new DruidDataSource();
 
+        druidDataSource.setDriverClassName(driver_name);
+        druidDataSource.setUrl(jdbc_url);
+        druidDataSource.setUsername(user_name);
+        druidDataSource.setPassword(password);
         // 设置初始化连接池时池中连接的数量;
         druidDataSource.setInitialSize(1);
         // 设置同时活跃的最大连接数;
-        druidDataSource.setMaxActive(10);
+        druidDataSource.setMaxActive(3);
         // 设置空闲时的最小连接数，必须介于 0 和最大连接数之间，默认为 0;
         druidDataSource.setMinIdle(1);
         // 设置没有空余连接时的等待时间，超时抛出异常，-1 表示一直等待;

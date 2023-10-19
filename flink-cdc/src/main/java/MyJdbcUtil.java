@@ -35,7 +35,7 @@ public class MyJdbcUtil {
         PreparedStatement ps = null;
         int batch = 50;
 
-        int fieldsCnt = objects.get(1).getClass().getDeclaredFields().length;
+        int fieldsCnt = objects.get(0).getClass().getDeclaredFields().length;
 
         // 拼接sql语句
         StringBuffer buffer = new StringBuffer();
@@ -66,7 +66,9 @@ public class MyJdbcUtil {
                     String type = field.getType().toString(); //属性的类型
                     if (type.endsWith("String")) {
                         ps.setString(j + 1, String.valueOf(field.get(obj)));
-                    } else if (type.endsWith("Date")) {
+                    }else if (type.endsWith("Integer")){
+                        ps.setInt(j + 1, (Integer) field.get(obj));
+                    }else if (type.endsWith("Date")) {
                         ps.setDate(j + 1, (Date) field.get(obj));
                     } else {
 
@@ -84,7 +86,7 @@ public class MyJdbcUtil {
             conn.commit();
             ps.clearBatch();
             ps.close();
-            conn.close();
+//            conn.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
