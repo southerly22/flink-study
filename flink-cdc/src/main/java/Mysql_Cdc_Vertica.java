@@ -1,13 +1,16 @@
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.mysql.cj.jdbc.MysqlDataSource;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
+import com.ververica.cdc.debezium.StringDebeziumDeserializationSchema;
 import entity.CdcDemo;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.windowing.RichWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
@@ -29,14 +32,16 @@ import java.util.Random;
 public class Mysql_Cdc_Vertica {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        conf.setInteger("rest.port",8085);
+        conf.setInteger("rest.port",8084);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
         env.setParallelism(3);
 
         env.enableCheckpointing(3000, CheckpointingMode.EXACTLY_ONCE);
-        env.getCheckpointConfig().setCheckpointStorage("file:///D:\\CodePlace_JH\\flink-study\\flink-cdc\\src\\ck");
+        env.getCheckpointConfig().setCheckpointStorage("file:////Users/liuzhixin/codeplace/flink-study/flink-cdc/ck");
 //        env.getCheckpointConfig().setTolerableCheckpointFailureNumber(3);//容忍 ck 失败最大次数
 //        env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3,3000));
+        //设置任务关闭的时候保留最后一次 CK 数据
+        env.getCheckpointConfig().setExternalizedCheckpointCleanup(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
         Properties prop = new Properties();
         prop.setProperty("useSSL","false");
@@ -50,17 +55,19 @@ public class Mysql_Cdc_Vertica {
                 .username("root")
                 .password("123456")
                 .jdbcProperties(prop)
-                .databaseList("lzxtest")
-                .tableList("lzxtest.test_cdc") //使用"db.table"的方式
+                .databaseList("test")
+                .tableList("test.test_cdc") //使用"db.table"的方式
                 .startupOptions(StartupOptions.initial())
-//                .startupOptions(StartupOptions.earliest())
-//                .startupOptions(StartupOptions.latest())
-                .deserializer(new JsonDebeziumDeserializationSchema())
+                //.startupOptions(StartupOptions.earliest())
+                .startupOptions(StartupOptions.latest())
+                .deserializer(new MyDebeziumDeserializationSchema())
+                //.deserializer(new JsonDebeziumDeserializationSchema())
+                .includeSchemaChanges(true)
                 .build();
 
-        SingleOutputStreamOperator<JSONObject> mysqlDs = env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "mysql-Cdc")
-                .map(JSON::parseObject);
-        mysqlDs.print();
+        env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "mysql-Cdc")
+                //.map(JSON::parseObject);
+                        .print();
 
 //        mysqlDs.map(
 //                jsonObj -> {
