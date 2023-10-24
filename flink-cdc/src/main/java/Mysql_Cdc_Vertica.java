@@ -12,6 +12,7 @@ import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.windowing.RichWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
@@ -19,6 +20,9 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -51,7 +55,7 @@ public class Mysql_Cdc_Vertica {
                 .hostname("localhost")
                 .port(3306)
 //                 .serverTimeZone("UTC")
-                 .scanNewlyAddedTableEnabled(true) // 启用扫描新添加的表功能
+//                 .scanNewlyAddedTableEnabled(true) // 启用扫描新添加的表功能
                 .username("root")
                 .password("123456")
                 .jdbcProperties(prop)
@@ -59,15 +63,35 @@ public class Mysql_Cdc_Vertica {
                 .tableList("test.test_cdc") //使用"db.table"的方式
                 .startupOptions(StartupOptions.initial())
                 //.startupOptions(StartupOptions.earliest())
-                .startupOptions(StartupOptions.latest())
+                //.startupOptions(StartupOptions.latest())
                 .deserializer(new MyDebeziumDeserializationSchema())
                 //.deserializer(new JsonDebeziumDeserializationSchema())
-                .includeSchemaChanges(true)
+                //.includeSchemaChanges(true)
                 .build();
 
-        env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "mysql-Cdc")
-                //.map(JSON::parseObject);
-                        .print();
+        SingleOutputStreamOperator<CdcDemo> cdcDs = env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "mysql-Cdc")
+                .map(str -> {
+                    JSONObject after = JSON.parseObject(str).getJSONObject("after");
+                    return JSON.parseObject(after.toJSONString(), CdcDemo.class);
+                });
+
+        cdcDs.filter(c->{
+            return c.getMaterialInfo() != null;
+        }).addSink(new SinkFunction<CdcDemo>() {
+            @Override
+            public void invoke(CdcDemo cdcDemo, Context context) throws Exception {
+                Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/test?characterEncoding=UTF-8", "root", "123456");
+                PreparedStatement ps = conn.prepareStatement("insert into `test_cdc_res` (`id`, `username`,`material_info`) values(?,?,?)");
+                ps.setInt(1,cdcDemo.getId());
+                ps.setTimestamp(2,cdcDemo.getTs());
+                ps.setString(3,cdcDemo.getMaterialInfo());
+
+                ps.execute();
+                ps.close();
+                conn.close();
+            }
+        });
+
 
 //        mysqlDs.map(
 //                jsonObj -> {
